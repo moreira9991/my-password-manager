@@ -9,6 +9,7 @@ class AppGUI:
         self.root = root
         self.root.title("My Password Manager")
         self.root.config(padx=20,pady=20)
+        self.root.resizable(False,False)
 
         self.root.bind("<Return>", lambda e:self.add_btn.invoke())
         self.root.bind("<KP_Enter>", lambda e:self.add_btn.invoke())
@@ -54,6 +55,8 @@ class AppGUI:
 
         self.search_btn = Button(text="My password's", command=self.on_cls)
         self.search_btn.grid(column=2, row=1, sticky="WE")
+
+        self.web_inpt.focus()
 
     def toggle_password(self):
         self._show_state["visible"] = not self._show_state["visible"]
@@ -138,8 +141,6 @@ class AppGUI:
         win.wait_window()
 
 
-
-
     def custom_message_askokcancel(self, parent, title, message)-> bool:
         self.result_message=False
 
@@ -190,12 +191,17 @@ class AppGUI:
 class MyPasswords:
     def __init__(self, root1:Tk):
         #Store/data
-        self.root1=Toplevel(root1) # a trabalhar aqui --> Alterei o para Toplvl, alterei todos root1 para self.root1, ainda me da um problema
+        self.root1=Toplevel(root1) 
         self.store =JsonStore(Path("Passwords_data.json"))
         self.data = self.store.load()
         self.bg=self.root1.cget("bg")
-        self.root1.transient(root1) #Comporta se como dialogo do parent, para continuar é preciso fechar
-        self.root1.grab_set() #apenas deixa interagir com esta pagina
+        #Comporta se como dialogo do parent, para continuar é preciso fechar
+        self.root1.transient(root1)
+        #apenas deixa interagir com esta pagina
+        self.root1.grab_set() 
+
+        self.root1.bind("<Return>", lambda e:self.search_btn.invoke())
+        self.root1.bind("<KP_Enter>", lambda e:self.search_btn.invoke())
         
         self.root1.title("My Password's")
         self.root1.config(padx=10,pady=10)
@@ -251,10 +257,21 @@ class MyPasswords:
         
         self.wbsite=Entry(self.root1,width=20)
         self.wbsite.grid(column=3,row=0)
-        Button(self.root1,text="Search",command=self.onsearch).grid(column=4,row=0,sticky="we")
-        Button(self.root1,text="Manage Passwords",command=self.on_manage).grid(column=4,row=1)
-        Button(self.root1,text="Manage\nMaster Password",command=self.on_manage_mpwd).grid(column=4,row=2,rowspan=2,sticky="WNE")
-        Button(self.root1,text="Backup\npassword's").grid(column=4,row=4,rowspan=2,sticky="we")
+
+        self.search_btn = Button(self.root1,text="Search",command=self.onsearch)
+        self.search_btn.grid(column=4,row=0,sticky="we")
+
+        self.manage_pwd_btn = Button(self.root1,text="Manage Passwords",command=self.on_manage)
+        self.manage_pwd_btn.grid(column=4,row=1)
+
+        self.manage_master_btn=Button(self.root1,text="Manage\nMaster Password",command=self.on_manage_mpwd)
+        self.manage_master_btn.grid(column=4,row=2,rowspan=2,sticky="WNE")
+
+        self.backup_btn=Button(self.root1,text="Backup\npassword's")
+        self.backup_btn.grid(column=4,row=4,rowspan=2,sticky="we")
+
+        self.wbsite.focus()
+
     
     def onsearch(self) -> None:
         site = self.wbsite.get()
@@ -265,12 +282,12 @@ class MyPasswords:
         entry = self.data.get(key)
         if entry:
             root2=Toplevel(self.root1)
-            root2.title(key)
+            root2.title(key.capitalize())
             Label(root2, text="Email/Username", font=("Arial",10,"bold")).grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
             Label(root2, text="Password", font=("Arial",10,"bold")).grid(column=1, row= 0 ,sticky="w",padx=10,pady=5)
-            root2.transient(self.root1) #Comporta se como dialogo do parent, para continuar é preciso fechar
-            #root2.attributes("-topmost",True) # 
-            root2.grab_set() #apenas deixa interagir com esta pagina
+            root2.transient(self.root1) 
+
+            root2.grab_set()
             cnt=1
             for acc in entry:
                 email = acc["username"]
@@ -304,22 +321,53 @@ class MyPasswords:
         else:
             self.custom_message_info(parent=self.root1, title="Error!", message=f"No data saved for {site.capitalize()}")
 
+    # to enable btns on_off= False
+    # to disable btns on_off=True
+    def disable_btns(self,on_off:bool):
+        if on_off == True:
+            self.manage_pwd_btn.config(state="disabled")
+            self.manage_master_btn.config(state="disabled")
+            self.search_btn.config(state="disabled")
+            self.backup_btn.config(state="disabled")
+            self.wbsite.config(state="disabled")
+        if on_off == False:
+            self.manage_pwd_btn.config(state="normal")
+            self.manage_master_btn.config(state="normal")
+            self.search_btn.config(state="normal")
+            self.backup_btn.config(state="normal")
+            self.wbsite.config(state="normal")
+
     def on_manage(self):
         self.root3=Toplevel(self.root1)
         self.root3.title("Manage Passwords")
         self.root3.config(padx=10,pady=10)
 
-        self.root3.transient(self.root1) #Comporta se como dialogo do parent, para continuar é preciso fechar
-        #self.root3.grab_set() #apenas deixa interagir com esta pagina // Neste caso temos de desabilitar os botoes
+        self.root3.bind("<Return>", lambda e:manage_search_btn.invoke())
+        self.root3.bind("<KP_Enter>", lambda e:manage_search_btn.invoke())
+
+        #disable previous buttons
+        self.disable_btns(on_off=True)
+
+        #Comporta se como dialogo do parent, para continuar é preciso fechar
+        self.root3.transient(self.root1) 
+
         Label(self.root3, text="Site", font=("Arial",10,"bold")).grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
         Label(self.root3, text="Email/Username", font=("Arial",10,"bold")).grid(column=0, row= 1 ,sticky="w",padx=10,pady=5)
 
         self.site_inpt = Entry(self.root3,width=30)
         self.site_inpt.grid(column=1,row=0)
+
         self.user_inpt = Entry(self.root3,width=30)
         self.user_inpt.grid(column=1,row=1)
 
-        Button(self.root3,text="Search",command=self.on_manage_search).grid(column=2, row=0,sticky="WE")
+        manage_search_btn=Button(self.root3,text="Search",command=self.on_manage_search)
+        manage_search_btn.grid(column=2, row=0,sticky="WE")
+
+        self.root3.bind("<Destroy>", lambda e:self.disable_btns(on_off=False))
+
+        self.site_inpt.focus()
+
+        
 
         
     def on_manage_search(self):
@@ -402,16 +450,26 @@ class MyPasswords:
         self.root4=Toplevel(self.root1)
         self.root4.title("Provide master password to continue.")
         self.root4.config(padx=10,pady=10)
-        self.root4.transient(self.root1) #Comporta se como dialogo do parent, para continuar é preciso fechar
-        self.root4.grab_set() #apenas deixa interagir com esta pagina
+        self.root4.transient(self.root1) 
+        self.root4.grab_set() 
+
+        self.root4.bind("<Return>", lambda e:self.enter_btn.invoke())
+        self.root4.bind("<KP_Enter>", lambda e:self.enter_btn.invoke())
+        
         
         self._show_state= {"visible":False}
         Label(self.root4, text="Master password: ").grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
         self.mpwd_inpt=Entry(self.root4,width=25,show="*")
         self.mpwd_inpt.grid(column=1,row=0)
+
         self.show_info=Button(self.root4,text="Show",command=self.toggle_password)
         self.show_info.grid(row=0,column=2)
-        self.enter_btn=Button(self.root4,text="Confirm",command=self.on_verify_mpwd).grid(row=0,column=3)
+
+        self.enter_btn=Button(self.root4,text="Confirm",command=self.on_verify_mpwd)
+        self.enter_btn.grid(row=0,column=3)
+
+        self.mpwd_inpt.focus()
+        
 
     
     def on_verify_mpwd(self)->None:
@@ -423,16 +481,25 @@ class MyPasswords:
             self.root5=Toplevel(self.root1)
             self.root5.title("Set new master password.")
             self.root5.config(padx=10,pady=10)
-            self.root5.transient(self.root1) #Comporta se como dialogo do parent, para continuar é preciso fechar
-            self.root5.grab_set() #apenas deixa interagir com esta pagina
+            self.root5.transient(self.root1) 
+            self.root5.grab_set()
+
+            self.root5.bind("<Return>", lambda e:self.edit_enter_btn.invoke())
+            self.root5.bind("<KP_Enter>", lambda e:self.edit_enter_btn.invoke())
 
             self._show_state= {"visible":False}
             Label(self.root5, text="Master password: ").grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
-            self.mpwd_inpt=Entry(self.root5,width=25,show="*")
-            self.mpwd_inpt.grid(column=1,row=0)
+
+            self.edit_mpwd_inpt=Entry(self.root5,width=25,show="*")
+            self.edit_mpwd_inpt.grid(column=1,row=0)
+
             self.show_info=Button(self.root5,text="Show",command=self.toggle_password)
             self.show_info.grid(row=0,column=2)
-            self.enter_btn=Button(self.root5,text="Confirm",command=self.on_edit_mpw).grid(row=0,column=3)
+
+            self.edit_enter_btn=Button(self.root5,text="Confirm",command=self.on_edit_mpw)
+            self.edit_enter_btn.grid(row=0,column=3)
+
+            self.edit_mpwd_inpt.focus()
 
         else:
             self.custom_message_info(parent=self.root4, title="Error!",message="Provide the correct password to continue.")
@@ -440,7 +507,7 @@ class MyPasswords:
         
         
     def on_edit_mpw(self)->None:
-        mpswd=self.mpwd_inpt.get()
+        mpswd=self.edit_mpwd_inpt.get()
         if mpswd == "":
             self.custom_message_info(parent=self.root5,title="Error!",message="You have to set a master password to continue or press 'Cancel'.")
         elif len(mpswd)<8:
@@ -459,7 +526,6 @@ class MyPasswords:
                 self.data[key]={"password":mpswd}
                 self.store.save(self.data)
                 self.custom_message_info(parent=self.root5, title="Success!", message="Master password set!")
-                #self.result=True
                 self.root5.destroy()
                 self.root1.destroy()
             if not confirm:
@@ -550,8 +616,6 @@ class MyPasswords:
     
 
 
-
-
 class MasterGUI:
     def __init__(self, root: Tk)-> None:
         self.root = root
@@ -591,7 +655,6 @@ class MasterGUI:
             self.add_btn = Button(self.root,text="Confirm", width=10, command=self.on_verify)
             self.add_btn.grid(row=0,column=3)
             self.pass_inpt.focus()
-
 
         
 
@@ -653,8 +716,7 @@ class MasterGUI:
         x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
         y = parent.winfo_rooty()+(parent.winfo_height()//2-150)
         win.geometry(f"+{x}+{y}")
-
-        
+ 
 
         lbl = Label(win, text=message,font=("Arial",12,"bold"),justify="center")
         lbl.pack(expand=True,pady=20)
@@ -711,5 +773,4 @@ class MasterGUI:
     def on_cancel(self):
         self.result_message= False
         self.win.destroy()
-
 
