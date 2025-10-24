@@ -1,0 +1,33 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pdb
+*.egg-info/
+build/
+dist/
+
+# --- Virtual environment ---
+venv/
+.venv/
+
+# --- IDE / Editor ---
+.vscode/
+.idea/
+
+# --- OS-specific ---
+.DS_Store
+Thumbs.db
+
+# --- Logs & temp files ---
+*.log
+*.tmp
+
+# --- Sensitive data ---
+vault.bin
+Passwords_data.json
+Passwords_data.txt
+
+# --- Cache ---
+*.cache

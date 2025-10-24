@@ -1,0 +1,82 @@
+from __future__ import annotations
+from tkinter import Tk
+from app.gui import AppGUI,MasterGUI
+
+def main() -> None:
+    root = Tk()
+    AppGUI(root)
+    root.mainloop()
+
+def mastercheck() -> None:
+    global mpawd
+    root1= Tk()
+    tst=MasterGUI(root1)
+    root1.mainloop()
+    mpawd=tst.result
+
+mastercheck()
+if  mpawd== True:
+    main()
+
+
+# Credenciais todas em uma janela - DONE
+
+# Filtrar por site as pass com barra de pesquisa e botao - DONE
+
+# Escrever pass's devem estar escondidas "**" e ter um botao para mostrar - DONE
+
+# Ser possível copiar passes e users de mypasswords - DONE
+
+# Organizar layout janela principal - DONE
+
+# Logo mais original - DONE
+
+# Manage passwords -> abrir janela para poder remover/alterar data - DONE
+
+# Criar mensagens info custom - DONE
+
+# Criar mensagens okcancel custom - DONE
+
+# Ao dar Set na master password, mostrar pass e perguntar ok/cancel antes de avançar - DONE
+
+# Ao abrir app, focar na entry para mal abrir poder escrever - DONE
+
+# Manage master password- DONE
+
+# Ver o porque de existir tantos self.result= True. penso tar a fazer nada - DONE
+
+# Sempre que abrir uma janela nova, impedir de interagir com janela pai enquanto janela inferior estiver aberta -
+# janelas =
+# Mypassword(parent->mypassword manager) - done
+# search (parent -> mypassword) - done
+# manage passwords ( parent -> mypassword) - eu quero que seja possivel interagir parcialmente, para poder copiar usernames e colar
+#tenho que desabilitar os outros botoes quando esta janela esta aberta. - parcialmente done
+# manage master password( parent -> mypasswrod) - done
+# 
+
+# Implementar carregar "enter" ativa os botoes de entrar -
+
+# Botao para fechar my passwords -??
+
+# Tirar a opção de redimensionar e full screen de maior parte das janelas, as que nao fazem sentido pelo menos - 
+
+# Dimensionar janela de mypasswords para tamanho fixo, com botão de backup localizado canto inferior direito, e para ver as passwords
+# Ter uma maneira de dar scroll a todas as passwords que ficam fora do alcance da janela, ficando todas visiveis
+
+# encriptar json files -
+
+# nao deixar criar conta para mesmo site e mesmo username -
+
+# autocomplete ao escrever sites -
+
+# organizar/refactor código -
+
+# Arranjar maneira de fazer backup do ficheiro encryptado para email.
+# No canto inferior direito da janela "My Password's", ter um botao que,
+# ao providencionar master password, pede email e envia JSON file com as passwords encriptadas, com instruções de onde o path do ficheiro deve ficar  -
+
+# readme -
+
+# requirements -
+
+
