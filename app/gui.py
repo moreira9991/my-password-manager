@@ -81,17 +81,25 @@ class AppGUI:
         username = self.user_inpt.get()
         pwd = self.pass_inpt.get()
 
+        key = normalize_site(site)
+
         if not site.strip() or not username.strip() or not pwd.strip():
             self.custom_message_info(self.root,title="Error!",message="Please don't leave any fields empty.")
             return
         
+        # Checking for duplicate username
+        checking_username = self.data.get(key)
+        for acc in checking_username:
+            if username == acc["username"]:
+                self.custom_message_info(parent=self.root,title="Error!",message=f"{username} account allready saved for {site.capitalize()}!")
+                return
 
         confirm = self.custom_message_askokcancel(parent=self.root,title=site.capitalize(),message=f"Email/Username: {username}\nPassword: {pwd}\n"
                                                   f"Press 'OK' to save data or press 'Cancel' to edit data.")
         if not confirm:
             return
             
-        key = normalize_site(site)
+        
         if key not in self.data:
             self.data[site]=[]
             
