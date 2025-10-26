@@ -47,10 +47,11 @@ if  mpawd== True:
 # Tirar a opção de redimensionar e full screen de maior parte das janelas, as que nao fazem sentido pelo menos - DONE
 # Dimensionar janela de mypasswords para tamanho fixo, com botão de backup localizado canto inferior direito, e para ver as passwords
 #   Ter uma maneira de dar scroll a todas as passwords que ficam fora do alcance da janela, ficando todas visiveis
-# Ao editar passwords ou master passwords, aparecer mensagem de erro se nada for alterado -
-# encriptar json files -
+# Ao editar passwords ou master passwords, aparecer mensagem de erro se nada for alterado - DONE
+# Add more and stronger requirements for creating a password or master password -
+# Show hint if a password is strong or weak -
+# Migrar para SQLite + SQLcipher-
 # nao deixar criar conta para mesmo site e mesmo username - DONE
-
 # Logo mais original -
 # autocomplete ao escrever sites - talvez nao - 
 # organizar/refactor código -

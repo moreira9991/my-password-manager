@@ -376,8 +376,6 @@ class MyPasswords:
         self.site_inpt.focus()
 
         
-
-        
     def on_manage_search(self):
         self.site = self.site_inpt.get()
         self.user = self.user_inpt.get()
@@ -413,25 +411,35 @@ class MyPasswords:
     def on_edit(self):
         for acc in self.entry:
             if self.user == acc["username"]:
-                acc["username"]= self.user_inpt.get()
-                acc["password"]= self.pwd_entry.get()
-
-                confirm = self.custom_message_askokcancel(
-                    parent=self.root3,
-                    title=f"Editing data for {self.site.capitalize()}",
-                    message=(
-                        f"Email/Username: {self.user_inpt.get()}\nPassword: {self.pwd_entry.get()}\n"
-                        f"Press 'OK' to save data or press 'Cancel' to edit data"
+                #Checking if there are no changes
+                if (self.user_inpt.get() == acc["username"]) and (self.pwd_entry.get()==acc["password"]):
+                    self.custom_message_info(
+                        parent=self.root3,
+                        title="Error!",
+                        message=(f"No changes detected."),
                         )
-                )
-                if not confirm:
-                    return  
+                    return
+                else:
+                    confirm = self.custom_message_askokcancel(
+                        parent=self.root3,
+                        title=f"Editing data for {self.site.capitalize()}",
+                        message=(
+                            f"Email/Username: {self.user_inpt.get()}\nPassword: {self.pwd_entry.get()}\n"
+                            f"Press 'OK' to save data or press 'Cancel' to edit data"
+                            )
+                    )
+                    
+                    if not confirm:
+                        return  
+                    else:
+                        acc["username"]= self.user_inpt.get()
+                        acc["password"]= self.pwd_entry.get()
+                        self.store.save(self.data)
 
-                self.store.save(self.data)
-                self.custom_message_info(parent=self.root3,title="Success!", message=f"You edited {self.user_inpt.get()} account data for {self.site.capitalize()}")
-                self.root3.destroy()
-                self.root1.destroy()
-                break
+                        self.custom_message_info(parent=self.root3,title="Success!", message=f"You edited {self.user_inpt.get()} account data for {self.site.capitalize()}")
+                        self.root3.destroy()
+                        self.root1.destroy()
+                        break
 
     def on_delete(self):
         for i,acc in enumerate(self.entry):
@@ -498,8 +506,8 @@ class MyPasswords:
             self._show_state= {"visible":False}
             Label(self.root5, text="Master password: ").grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
 
-            self.edit_mpwd_inpt=Entry(self.root5,width=25,show="*")
-            self.edit_mpwd_inpt.grid(column=1,row=0)
+            self.mpwd_inpt=Entry(self.root5,width=25,show="*")
+            self.mpwd_inpt.grid(column=1,row=0)
 
             self.show_info=Button(self.root5,text="Show",command=self.toggle_password)
             self.show_info.grid(row=0,column=2)
@@ -507,7 +515,7 @@ class MyPasswords:
             self.edit_enter_btn=Button(self.root5,text="Confirm",command=self.on_edit_mpw)
             self.edit_enter_btn.grid(row=0,column=3)
 
-            self.edit_mpwd_inpt.focus()
+            self.mpwd_inpt.focus()
 
         else:
             self.custom_message_info(parent=self.root4, title="Error!",message="Provide the correct password to continue.")
@@ -515,11 +523,26 @@ class MyPasswords:
         
         
     def on_edit_mpw(self)->None:
-        mpswd=self.edit_mpwd_inpt.get()
+        mpswd=self.mpwd_inpt.get()
+        key="__MASTERPASSWORD"
         if mpswd == "":
-            self.custom_message_info(parent=self.root5,title="Error!",message="You have to set a master password to continue or press 'Cancel'.")
+            self.custom_message_info(
+                parent=self.root5,title="Error!",
+                message="To continue, set a new master password."
+                )
         elif len(mpswd)<8:
-            self.custom_message_info(self.root5,title="Error!", message=f"Your password is to small!\nMinimum 8 characters.")
+            self.custom_message_info(
+                self.root5,title="Error!",
+                message=f"Your password is to small!\nMinimum 8 characters."
+                )
+        #working here
+        elif mpswd == self.data[key]["password"]:
+            self.custom_message_info(
+                parent=self.root5,
+                title="Error!",
+                message="No changes detected."
+            )
+            return
         else:
             confirm=self.custom_message_askokcancel(
                 parent=self.root5,
@@ -530,7 +553,6 @@ class MyPasswords:
                     )
             )
             if confirm:
-                key="__MASTERPASSWORD"
                 self.data[key]={"password":mpswd}
                 self.store.save(self.data)
                 self.custom_message_info(parent=self.root5, title="Success!", message="Master password set!")
