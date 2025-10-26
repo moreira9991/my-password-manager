@@ -20,31 +20,17 @@ if  mpawd== True:
 
 
 # Credenciais todas em uma janela - DONE
-
 # Filtrar por site as pass com barra de pesquisa e botao - DONE
-
 # Escrever pass's devem estar escondidas "**" e ter um botao para mostrar - DONE
-
 # Ser possível copiar passes e users de mypasswords - DONE
-
 # Organizar layout janela principal - DONE
-
-# Logo mais original - DONE
-
 # Manage passwords -> abrir janela para poder remover/alterar data - DONE
-
 # Criar mensagens info custom - DONE
-
 # Criar mensagens okcancel custom - DONE
-
 # Ao dar Set na master password, mostrar pass e perguntar ok/cancel antes de avançar - DONE
-
 # Ao abrir app, focar na entry para mal abrir poder escrever - DONE
-
 # Manage master password- DONE
-
 # Ver o porque de existir tantos self.result= True. penso tar a fazer nada - DONE
-
 # Sempre que abrir uma janela nova, impedir de interagir com janela pai enquanto janela inferior estiver aberta - DONE
 #   janelas =
 #   Mypassword(parent->mypassword manager) - done
@@ -52,45 +38,29 @@ if  mpawd== True:
 #   manage passwords ( parent -> mypassword) - eu quero que seja possivel interagir parcialmente, para poder copiar usernames e colar
 #   tenho que desabilitar os outros botoes quando esta janela esta aberta. - done
 #   manage master password( parent -> mypasswrod) - done
-# 
-
 # Implementar carregar "enter" ativa os botoes de entrar - DONE
 #   Masterpassword verify window - done
 #   Mypasswordmanager main window - done
 #   ManagePasswords search - done
 #   ManagePasswords managepwd - done
-
-
 # Focous em todos os textos ao abrir janela - DONE
-
-# Botao para fechar my passwords -??
-
 # Tirar a opção de redimensionar e full screen de maior parte das janelas, as que nao fazem sentido pelo menos - DONE
-
 # Dimensionar janela de mypasswords para tamanho fixo, com botão de backup localizado canto inferior direito, e para ver as passwords
 #   Ter uma maneira de dar scroll a todas as passwords que ficam fora do alcance da janela, ficando todas visiveis
-
-# Ao editar passwords ou master passwords, aparecer mensagem de erro se nada for alterado
-
+# Ao editar passwords ou master passwords, aparecer mensagem de erro se nada for alterado -
 # encriptar json files -
+# nao deixar criar conta para mesmo site e mesmo username - DONE
 
-# nao deixar criar conta para mesmo site e mesmo username -
-
+# Logo mais original -
 # autocomplete ao escrever sites - talvez nao - 
-
 # organizar/refactor código -
-
 # comentar código em ingles
-
 # Arranjar maneira de fazer backup do ficheiro encryptado para email.
 #   No canto inferior direito da janela "My Password's", ter um botao que,
 #   ao providencionar master password, pede email e envia JSON file com as passwords encriptadas,
 #   com instruções de onde o path do ficheiro deve ficar  -
-
 # Script necessário para correr a app de maneira simples pelo terminal
-
 # readme -
-
 # requirements -
 
 
