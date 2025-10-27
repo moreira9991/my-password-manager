@@ -48,8 +48,19 @@ if  mpawd== True:
 # Dimensionar janela de mypasswords para tamanho fixo, com botão de backup localizado canto inferior direito, e para ver as passwords
 #   Ter uma maneira de dar scroll a todas as passwords que ficam fora do alcance da janela, ficando todas visiveis
 # Ao editar passwords ou master passwords, aparecer mensagem de erro se nada for alterado - DONE
-# Add more and stronger requirements for creating a password or master password -
-# Show hint if a password is strong or weak -
+# When editing passwords, block if the username is allready in user for that plataform. It should not be possible to have 2 acc for the
+#   same plataform - DONE
+
+# ---- working here 
+
+# Add more and stronger requirements for creating a password or master password - DONE
+#   When creating master password, type twice - DONE
+#   toggle visibility button fix size - DONE
+# Show password strength when confirming - DONE
+
+# ---- working here
+
+
 # Migrar para SQLite + SQLcipher-
 # nao deixar criar conta para mesmo site e mesmo username - DONE
 # Logo mais original -
@@ -60,7 +71,6 @@ if  mpawd== True:
 #   No canto inferior direito da janela "My Password's", ter um botao que,
 #   ao providencionar master password, pede email e envia JSON file com as passwords encriptadas,
 #   com instruções de onde o path do ficheiro deve ficar  -
-# Script necessário para correr a app de maneira simples pelo terminal
 # readme -
 # requirements -
 
