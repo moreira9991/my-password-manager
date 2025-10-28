@@ -45,26 +45,23 @@ if  mpawd== True:
 #   ManagePasswords managepwd - done
 # Focous em todos os textos ao abrir janela - DONE
 # Tirar a opção de redimensionar e full screen de maior parte das janelas, as que nao fazem sentido pelo menos - DONE
-# Dimensionar janela de mypasswords para tamanho fixo, com botão de backup localizado canto inferior direito, e para ver as passwords
-#   Ter uma maneira de dar scroll a todas as passwords que ficam fora do alcance da janela, ficando todas visiveis
+# Dimensionar janela de mypasswords para tamanho fixo e scroll nas passwords - DONE
 # Ao editar passwords ou master passwords, aparecer mensagem de erro se nada for alterado - DONE
 # When editing passwords, block if the username is allready in user for that plataform. It should not be possible to have 2 acc for the
 #   same plataform - DONE
-
-# ---- working here 
-
 # Add more and stronger requirements for creating a password or master password - DONE
 #   When creating master password, type twice - DONE
 #   toggle visibility button fix size - DONE
 # Show password strength when confirming - DONE
+# nao deixar criar conta para mesmo site e mesmo username - DONE
 
-# ---- working here
-
+# -- NEXT FIX THIS
+# Bug FOUND in manage passwords! When pressing search and either there is no saved data for the search or entrys are empty, the search
+# btn becomes disabled, becouse on the next stage it has to become disabled. 
+# -- NEXT FIX THIS
 
 # Migrar para SQLite + SQLcipher-
-# nao deixar criar conta para mesmo site e mesmo username - DONE
 # Logo mais original -
-# autocomplete ao escrever sites - talvez nao - 
 # organizar/refactor código -
 # comentar código em ingles
 # Arranjar maneira de fazer backup do ficheiro encryptado para email.
@@ -73,5 +70,6 @@ if  mpawd== True:
 #   com instruções de onde o path do ficheiro deve ficar  -
 # readme -
 # requirements -
+
 
 

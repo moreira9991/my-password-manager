@@ -1,4 +1,4 @@
-from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox,Toplevel, Frame, StringVar
+from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox,Toplevel, Frame, StringVar, Scrollbar
 from pathlib import Path
 from app.service import generate_password, normalize_site
 from app.store_json import JsonStore
@@ -222,14 +222,23 @@ class AppGUI:
         self.result_message= False
         self.win.destroy()
 
+
 class MyPasswords:
     def __init__(self, root1:Tk):
-        #Store/data
+        
         self.root1=Toplevel(root1) 
         self.root1.transient(root1)
         self.root1.grab_set() 
         self.root1.title("My Password's")
         self.root1.config(padx=10,pady=10)
+        self.root1.geometry("1580x1000")
+        self.root1.resizable(False,False)
+
+        self.root1.grid_rowconfigure(0,weight=0)
+        self.root1.grid_rowconfigure(1,weight=1)
+        self.root1.grid_columnconfigure(0,weight=1)
+        self.root1.grid_columnconfigure(1,weight=1)
+        self.root1.grid_columnconfigure(2,weight=1)
 
         self.store =JsonStore(Path("Passwords_data.json"))
         self.data = self.store.load()
@@ -237,7 +246,65 @@ class MyPasswords:
         
         self.root1.bind("<Return>", lambda e:self.search_btn.invoke())
         self.root1.bind("<KP_Enter>", lambda e:self.search_btn.invoke())
+
+        left_container= Frame(self.root1)
+        left_container.grid(row=1,column=0,columnspan=3,sticky="nsew",padx=0,pady=0)
         
+        right_container = Frame(self.root1)
+        right_container.grid(row=1,column=4,sticky="n")
+
+        left_canvas=Canvas(left_container, highlightthickness=0)
+        left_canvas.grid(row=0,column=0,sticky="nsew")
+
+        left_scrollbar = Scrollbar(left_container,orient="vertical",command=left_canvas.yview)
+        left_scrollbar.grid(row=0,column=1,sticky="ns")
+
+        left_container.grid_rowconfigure(0,weight=1)
+        left_container.grid_columnconfigure(0,weight=1)
+
+        inner_frame = Frame (left_canvas)
+        win_id= left_canvas.create_window((0,0),window=inner_frame,anchor="nw")
+
+        left_canvas.configure(yscrollcommand=left_scrollbar.set)
+
+
+        def _on_inner_configure(event):
+            #updates scrollregion when inner frame size changes
+            left_canvas.configure(scrollregion=left_canvas.bbox("all"))
+        
+        inner_frame.bind("<Configure>",_on_inner_configure)
+
+        def _on_canvas_configure(event):
+            # Match inner_frame width to the visible canvas width
+            left_canvas.itemconfigure(win_id,width=left_canvas.winfo_width())
+
+        left_canvas.bind("<Configure>",_on_canvas_configure)
+
+    
+        def smooth_scroll(canvas,step=0.008):
+            #vertical scroll for tkinter canvas
+
+            def clamp(x,lo=0.0,hi=1.0):
+                return max(lo,min(hi,x))
+
+            def move(sign):
+                first,_last=canvas.yview()
+                canvas.yview_moveto(clamp(first+sign*step))
+
+            system = str(canvas.tk.call('tk','windowingsystem'))
+            #linux
+            if system == "x11" :
+                canvas.bind_all("<Button-4>", lambda e: move(-1),add="+")
+                canvas.bind_all("<Button-5>", lambda e: move(+1),add="+")
+            #macOS
+            elif system== "aqua":
+                canvas.bind_all("<MouseWheel>", lambda e: move(-1 if e.delta > 0 else +1),add="+")
+            #windows
+            else:
+                canvas.bind_all("<MouseWheel>", lambda e: move(-1 if e.delta > 0 else +1),add="+")
+
+        smooth_scroll(left_canvas)
+
         cnt=1
         Label(self.root1, text="Site", font=("Arial",10,"bold")).grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
         Label(self.root1, text="Email/Username", font=("Arial",10,"bold")).grid(column=1, row= 0 ,sticky="w",padx=10,pady=5)
@@ -251,8 +318,8 @@ class MyPasswords:
                 password1= acc["password"]
 
                 #site
-                site_var=StringVar(value=sites)
-                site_entry= Entry(self.root1,
+                site_var=StringVar(value=sites.capitalize())
+                site_entry= Entry(inner_frame,
                                   textvariable=site_var,
                                   state="readonly",
                                   relief="flat",
@@ -264,7 +331,7 @@ class MyPasswords:
 
                 #user
                 user_var = StringVar(value=username1)
-                user_entry= Entry(self.root1,
+                user_entry= Entry(inner_frame,
                                   textvariable=user_var,
                                   state="readonly",
                                   relief="flat",
@@ -276,7 +343,7 @@ class MyPasswords:
 
                 #password
                 pass_var=StringVar(value=password1)
-                pass_entry=Entry(self.root1,
+                pass_entry=Entry(inner_frame,
                                  textvariable=pass_var,
                                  state="readonly",
                                  relief="flat",
@@ -294,14 +361,14 @@ class MyPasswords:
         self.search_btn = Button(self.root1,text="Search",command=self.onsearch)
         self.search_btn.grid(column=4,row=0,sticky="we")
 
-        self.manage_pwd_btn = Button(self.root1,text="Manage Passwords",command=self.on_manage)
-        self.manage_pwd_btn.grid(column=4,row=1)
+        self.manage_pwd_btn = Button(right_container,text="Manage Passwords",command=self.on_manage)
+        self.manage_pwd_btn.pack(fill="x")
 
-        self.manage_master_btn=Button(self.root1,text="Manage\nMaster Password",command=self.on_manage_mpwd)
-        self.manage_master_btn.grid(column=4,row=2,rowspan=2,sticky="WNE")
+        self.manage_master_btn=Button(right_container,text="Manage\nMaster Password",command=self.on_manage_mpwd)
+        self.manage_master_btn.pack(fill="x")
 
-        self.backup_btn=Button(self.root1,text="Backup\npassword's")
-        self.backup_btn.grid(column=4,row=4,rowspan=2,sticky="we")
+        self.backup_btn=Button(right_container,text="Backup\npassword's")
+        self.backup_btn.pack(fill="x",anchor="s")
 
         self.wbsite.focus()
 
@@ -376,6 +443,7 @@ class MyPasswords:
         self.root3=Toplevel(self.root1)
         self.root3.title("Manage Passwords")
         self.root3.config(padx=10,pady=10)
+        self.root3.resizable(False,False)
 
         self.root3.bind("<Return>", lambda e:self.manage_search_btn.invoke())
         self.root3.bind("<KP_Enter>", lambda e:self.manage_search_btn.invoke())
@@ -535,6 +603,7 @@ class MyPasswords:
         self.root4=Toplevel(self.root1)
         self.root4.title("Provide master password to continue.")
         self.root4.config(padx=10,pady=10)
+        self.root4.resizable(False,False)
         self.root4.transient(self.root1) 
         self.root4.grab_set() 
         self.root4.bind("<Return>", lambda e:self.enter_btn.invoke())
@@ -826,7 +895,7 @@ class MasterGUI:
             self.pass_inpt = Entry(width=32,show="*")
             self.pass_inpt.grid(column=1, row=0, sticky="W")
 
-            self.toggle_btn= Button(self.root, text="Show",command=self.toggle_password)
+            self.toggle_btn= Button(self.root, text="Show",command= lambda: self.toggle_password(btn=self.toggle_btn,ent=self.pass_inpt,state=self._show_state))
             self.toggle_btn.grid(row=0,column=2)
 
             self.add_btn = Button(self.root,text="Confirm", width=10, command=self.on_verify)
