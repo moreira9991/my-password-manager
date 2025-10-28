@@ -52,12 +52,13 @@ class AppGUI:
         self.add_btn = Button(text="Add", width=50, command=self.on_add)
         self.add_btn.grid(column=1, row=5, columnspan=2, sticky="W")
 
-
         self.search_btn = Button(text="My password's", command=self.on_cls)
         self.search_btn.grid(column=2, row=1, sticky="WE")
 
+        #Focous will start on the web entry box
         self.web_inpt.focus()
 
+    # Changes visibility on password from "*" to visible and vice versa
     def toggle_password(self):
         self._show_state["visible"] = not self._show_state["visible"]
         if self._show_state["visible"]:
@@ -67,14 +68,14 @@ class AppGUI:
             self.pass_inpt.config(show="*")
             self.toggle_btn.config(text="Show")
 
-
-        #Callbacks
+    # Generates a lvl4 password
     def on_generate(self) -> None:
         password = generate_password()
         # Replace any existing text in the password field
         self.pass_inpt.delete(0, END)
         self.pass_inpt.insert(0, password)
 
+    #Adds account to JSON -> encripted DB soon
     def on_add(self) -> None:
         site = self.web_inpt.get()
         username = self.user_inpt.get()
@@ -91,7 +92,7 @@ class AppGUI:
             if username == acc["username"]:
                 self.custom_message_info(parent=self.root,title="Error!",message=f"{username} account allready saved for {site.capitalize()}!")
                 return
-            
+        #Checks for password strength
         result= zxcvbn(pwd)
         if result["score"]<3:
             confirm = self.custom_message_askokcancel(
@@ -126,7 +127,6 @@ class AppGUI:
         
         if not confirm:
             return
-            
         
         if key not in self.data:
             self.data[site]=[]
@@ -149,6 +149,7 @@ class AppGUI:
     def on_cls(self)-> None:
         MyPasswords(self.root)
 
+    # Custom message to show errors and infos
     def custom_message_info(self, parent, title, message):
         win= Toplevel(parent)
         win.withdraw()
@@ -164,8 +165,6 @@ class AppGUI:
         y = parent.winfo_rooty()+(parent.winfo_height()//2-150)
         win.geometry(f"+{x}+{y}")
 
-        
-
         lbl = Label(win, text=message,font=("Arial",12,"bold"),justify="center")
         lbl.pack(expand=True,pady=20)
         btn = Button(win, text="OK",command=win.destroy,width=10)
@@ -176,7 +175,7 @@ class AppGUI:
         btn.focus_set()
         win.wait_window()
 
-
+    # custom message that asks ok(return true) or cancel(return false)
     def custom_message_askokcancel(self, parent, title, message)-> bool:
         self.result_message=False
 
@@ -213,34 +212,32 @@ class AppGUI:
 
         return self.result_message
 
+
     def on_ok(self):
         self.result_message= True
         self.win.destroy()
     
+
     def on_cancel(self):
         self.result_message= False
         self.win.destroy()
-
-
-
 
 class MyPasswords:
     def __init__(self, root1:Tk):
         #Store/data
         self.root1=Toplevel(root1) 
+        self.root1.transient(root1)
+        self.root1.grab_set() 
+        self.root1.title("My Password's")
+        self.root1.config(padx=10,pady=10)
+
         self.store =JsonStore(Path("Passwords_data.json"))
         self.data = self.store.load()
         self.bg=self.root1.cget("bg")
-        #Comporta se como dialogo do parent, para continuar é preciso fechar
-        self.root1.transient(root1)
-        #apenas deixa interagir com esta pagina
-        self.root1.grab_set() 
-
+        
         self.root1.bind("<Return>", lambda e:self.search_btn.invoke())
         self.root1.bind("<KP_Enter>", lambda e:self.search_btn.invoke())
         
-        self.root1.title("My Password's")
-        self.root1.config(padx=10,pady=10)
         cnt=1
         Label(self.root1, text="Site", font=("Arial",10,"bold")).grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
         Label(self.root1, text="Email/Username", font=("Arial",10,"bold")).grid(column=1, row= 0 ,sticky="w",padx=10,pady=5)
@@ -357,6 +354,7 @@ class MyPasswords:
         else:
             self.custom_message_info(parent=self.root1, title="Error!", message=f"No data saved for {site.capitalize()}")
 
+
     # to enable btns on_off= False
     # to disable btns on_off=True
     def disable_btns(self,on_off:bool):
@@ -373,6 +371,7 @@ class MyPasswords:
             self.backup_btn.config(state="normal")
             self.wbsite.config(state="normal")
 
+
     def on_manage(self):
         self.root3=Toplevel(self.root1)
         self.root3.title("Manage Passwords")
@@ -382,6 +381,8 @@ class MyPasswords:
         self.root3.bind("<KP_Enter>", lambda e:self.manage_search_btn.invoke())
 
         #disable previous buttons
+        # Here we disable buttons to prevent doing anything on the previous page, other than being
+        # possible to coppy info from the accounts
         self.disable_btns(on_off=True)
 
         #Comporta se como dialogo do parent, para continuar é preciso fechar
@@ -438,7 +439,6 @@ class MyPasswords:
 
 
     def on_edit(self):
-
         result=zxcvbn(self.pwd_entry.get())
         a=0
         for acc in self.entry:
@@ -609,7 +609,7 @@ class MyPasswords:
             self.edit_enter_btn=Button(self.root5,text="Confirm",command=self.on_edit_mpw)
             self.edit_enter_btn.grid(row=2,column=1,columnspan=2,sticky="we")
 
-            self.mpwd_inpt.focus()
+            self._mpwd_inpt.focus()
 
         else:
             self.custom_message_info(parent=self.root4, title="Error!",message="Provide the correct password to continue.")
@@ -919,13 +919,11 @@ class MasterGUI:
         x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
         y = parent.winfo_rooty()+(parent.winfo_height()//2-150)
         win.geometry(f"+{x}+{y}")
- 
 
         lbl = Label(win, text=message,font=("Arial",12,"bold"),justify="center")
         lbl.pack(expand=True,pady=20)
         btn = Button(win, text="OK",command=win.destroy,width=10)
         btn.pack(pady=10)
-
 
         win.deiconify()
         win.grab_set()
