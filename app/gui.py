@@ -88,10 +88,11 @@ class AppGUI:
         
         # Checking for duplicate username
         checking_username = self.data.get(key)
-        for acc in checking_username:
-            if username == acc["username"]:
-                self.custom_message_info(parent=self.root,title="Error!",message=f"{username} account allready saved for {site.capitalize()}!")
-                return
+        if checking_username:
+            for acc in checking_username:
+                if username == acc["username"]:
+                    self.custom_message_info(parent=self.root,title="Error!",message=f"{username} account allready saved for {site.capitalize()}!")
+                    return
         #Checks for password strength
         result= zxcvbn(pwd)
         if result["score"]<3:
@@ -129,7 +130,7 @@ class AppGUI:
             return
         
         if key not in self.data:
-            self.data[site]=[]
+            self.data[key]=[]
             
         self.data[key].append({"username": username, "password": pwd})
         try:
@@ -474,7 +475,6 @@ class MyPasswords:
 
         
     def on_manage_search(self):
-        self.manage_search_btn.config(state="disabled")
         self.site = self.site_inpt.get()
         self.user = self.user_inpt.get()
         key = normalize_site(self.site)
@@ -492,6 +492,7 @@ class MyPasswords:
                 self.custom_message_info(parent=self.root3, title="Error!", message=f"Username/Email provided is not saved for {key.capitalize()}")
                 return
             else:
+                self.manage_search_btn.config(state="disabled")
                 Label(self.root3, text="Password", font=("Arial",10,"bold")).grid(column=0, row= 2 ,sticky="w",padx=10,pady=5)
                 self.pwd_entry=Entry(self.root3,width=30)
                 self.pwd_entry.grid(column=1,row=2)
@@ -585,7 +586,7 @@ class MyPasswords:
                     parent=self.root3,
                     title=f"Deleting data for {self.site.capitalize()}",
                     message=(
-                        f"Username/Email: {self.user_inpt.get()}\nPassword: {self.pwd_entry.get()}\n"
+                        f"Username/Email: {self.user}\nPassword: {self.pwd_entry.get()}\n"
                         f"Press 'OK' to delete data or press 'Cancel'."
                         )
                 )
