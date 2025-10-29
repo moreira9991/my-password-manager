@@ -53,17 +53,14 @@ if  mpawd== True:
 #   When creating master password, type twice - DONE
 #   toggle visibility button fix size - DONE
 # Show password strength when confirming - DONE
-# nao deixar criar conta para mesmo site e mesmo username - DONE
-
-# -- NEXT FIX THIS
-# Bug FOUND in manage passwords! When pressing search and either there is no saved data for the search or entrys are empty, the search
-# btn becomes disabled, becouse on the next stage it has to become disabled. 
-# -- NEXT FIX THIS
-
+# Nao deixar criar conta para mesmo site e mesmo username - DONE
+# Bug FOUND in manage passwords! When pressing search and either there 
+#   is no saved data for the search or entrys are empty, the search
+#   btn becomes disabled, becouse on the next stage it has to become disabled. - FIXED
 # Migrar para SQLite + SQLcipher-
 # Logo mais original -
-# organizar/refactor código -
-# comentar código em ingles
+# Organizar/refactor código -
+# Comentar código em ingles
 # Arranjar maneira de fazer backup do ficheiro encryptado para email.
 #   No canto inferior direito da janela "My Password's", ter um botao que,
 #   ao providencionar master password, pede email e envia JSON file com as passwords encriptadas,
