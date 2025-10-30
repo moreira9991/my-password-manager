@@ -1,6 +1,6 @@
 from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox,Toplevel, Frame, StringVar, Scrollbar
 from pathlib import Path
-from app.service import generate_password, normalize_site
+from app.service import generate_password, normalize_site, custom_message_askokcancel, custom_message_info, toggle_password
 from app.store_json import JsonStore
 from zxcvbn import zxcvbn
 
@@ -10,6 +10,7 @@ class AppGUI:
         self.root.title("My Password Manager")
         self.root.config(padx=20,pady=20)
         self.root.resizable(False,False)
+        self._show_state= {"visible":False}
 
         self.root.bind("<Return>", lambda e:self.add_btn.invoke())
         self.root.bind("<KP_Enter>", lambda e:self.add_btn.invoke())
@@ -45,7 +46,15 @@ class AppGUI:
         self.pass_inpt.grid(column=1, row=3, sticky="W")  
 
         #buttons
-        self.toggle_btn= Button(text="Show",width=6,command=self.toggle_password)
+        self.toggle_btn= Button(
+            text="Show",
+            width=6,
+            command=lambda:toggle_password(
+                btn=self.toggle_btn,
+                ent=self.pass_inpt,
+                state=self._show_state
+            )
+        )
         self.toggle_btn.grid(column=2,row=3,sticky="we")
         self.generate_btn = Button(text="Generate password", command=self.on_generate).grid(column=2,row=2,sticky="we")
 
@@ -58,15 +67,6 @@ class AppGUI:
         #Focous will start on the web entry box
         self.web_inpt.focus()
 
-    # Changes visibility on password from "*" to visible and vice versa
-    def toggle_password(self):
-        self._show_state["visible"] = not self._show_state["visible"]
-        if self._show_state["visible"]:
-            self.pass_inpt.config(show="")
-            self.toggle_btn.config(text="Hide")
-        else:
-            self.pass_inpt.config(show="*")
-            self.toggle_btn.config(text="Show")
 
     # Generates a lvl4 password
     def on_generate(self) -> None:
@@ -83,7 +83,7 @@ class AppGUI:
         key = normalize_site(site)
 
         if not site.strip() or not username.strip() or not pwd.strip():
-            self.custom_message_info(self.root,title="Error!",message="Please don't leave any fields empty.")
+            custom_message_info(self.root,title="Error!",message="Please don't leave any fields empty.")
             return
         
         # Checking for duplicate username
@@ -91,12 +91,12 @@ class AppGUI:
         if checking_username:
             for acc in checking_username:
                 if username == acc["username"]:
-                    self.custom_message_info(parent=self.root,title="Error!",message=f"{username} account allready saved for {site.capitalize()}!")
+                    custom_message_info(parent=self.root,title="Error!",message=f"{username} account allready saved for {site.capitalize()}!")
                     return
         #Checks for password strength
         result= zxcvbn(pwd)
         if result["score"]<3:
-            confirm = self.custom_message_askokcancel(
+            confirm = custom_message_askokcancel(
                 parent=self.root,
                 title=site.capitalize(),
                 message=(
@@ -107,7 +107,7 @@ class AppGUI:
             )
         
         elif result["score"]==3:
-            confirm = self.custom_message_askokcancel(
+            confirm = custom_message_askokcancel(
                 parent=self.root,
                 title=site.capitalize(),
                 message=(
@@ -117,7 +117,7 @@ class AppGUI:
             )
         
         elif result["score"]==4:
-            confirm = self.custom_message_askokcancel(
+            confirm = custom_message_askokcancel(
                 parent=self.root,
                 title=site.capitalize(),
                 message=(
@@ -135,7 +135,7 @@ class AppGUI:
         self.data[key].append({"username": username, "password": pwd})
         try:
             self.store.save(self.data)
-            self.custom_message_info(parent=self.root,title="Success",message=f"{site.capitalize()} account saved.")
+            custom_message_info(parent=self.root,title="Success",message=f"{site.capitalize()} account saved.")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save data: {e}")
             return
@@ -145,84 +145,9 @@ class AppGUI:
             self.user_inpt.delete(0, END)
             self.pass_inpt.delete(0, END)
             self.web_inpt.focus_set()
-
-    
+ 
     def on_cls(self)-> None:
         MyPasswords(self.root)
-
-    # Custom message to show errors and infos
-    def custom_message_info(self, parent, title, message):
-        win= Toplevel(parent)
-        win.withdraw()
-        win.title(title)
-        win.configure(padx=10,pady=10)
-
-        win.resizable(False,False)
-        win.attributes("-topmost",True)
-        win.transient(parent)
-
-        parent.update_idletasks()
-        x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
-        y = parent.winfo_rooty()+(parent.winfo_height()//2-150)
-        win.geometry(f"+{x}+{y}")
-
-        lbl = Label(win, text=message,font=("Arial",12,"bold"),justify="center")
-        lbl.pack(expand=True,pady=20)
-        btn = Button(win, text="OK",command=win.destroy,width=10)
-        btn.pack(pady=10)
-
-        win.deiconify()
-        win.grab_set()
-        btn.focus_set()
-        win.wait_window()
-
-    # custom message that asks ok(return true) or cancel(return false)
-    def custom_message_askokcancel(self, parent, title, message)-> bool:
-        self.result_message=False
-
-        self.win= Toplevel(parent)
-        self.win.withdraw()
-        self.win.title(title)
-        self.win.configure(padx=10,pady=10)
-
-        self.win.resizable(False,False)
-        self.win.attributes("-topmost",True)
-        self.win.transient(parent)
-
-        parent.update_idletasks()
-        x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
-        y = parent.winfo_rooty()+(parent.winfo_height()//2-150)
-        self.win.geometry(f"+{x}+{y}")
-
-        lbl = Label(self.win, text=message,font=("Arial",12,"bold"),justify="center")
-        lbl.pack(expand=True,pady=10)
-
-        btn_frame = Frame(self.win)
-        btn_frame.pack(pady=10)
-
-        ok_btn = Button(btn_frame, text="OK",command=self.on_ok,width=10)
-        ok_btn.pack(side="left",padx=20)
-
-        cancel_btn = Button(btn_frame, text="Cancel",command=self.on_cancel,width=10)
-        cancel_btn.pack(side="right",padx=20)
-
-        self.win.deiconify()
-        self.win.grab_set()
-        ok_btn.focus_set()
-        self.win.wait_window()
-
-        return self.result_message
-
-
-    def on_ok(self):
-        self.result_message= True
-        self.win.destroy()
-    
-
-    def on_cancel(self):
-        self.result_message= False
-        self.win.destroy()
-
 
 class MyPasswords:
     def __init__(self, root1:Tk):
@@ -377,7 +302,7 @@ class MyPasswords:
     def onsearch(self) -> None:
         site = self.wbsite.get()
         if not site.strip():
-            self.custom_message_info(parent=self.root1,title="Error!", message="Please type a website to search.")
+            custom_message_info(parent=self.root1,title="Error!", message="Please type a website to search.")
             return
         key = normalize_site(site)
         entry = self.data.get(key)
@@ -418,9 +343,9 @@ class MyPasswords:
                 pass_entry.grid(column=1,row=cnt,sticky="w",padx=10,pady=5)
 
                 cnt+=1
-            root2.mainloop()
+            #root2.mainloop()
         else:
-            self.custom_message_info(parent=self.root1, title="Error!", message=f"No data saved for {site.capitalize()}")
+            custom_message_info(parent=self.root1, title="Error!", message=f"No data saved for {site.capitalize()}")
 
 
     # to enable btns on_off= False
@@ -479,7 +404,7 @@ class MyPasswords:
         self.user = self.user_inpt.get()
         key = normalize_site(self.site)
         if (not self.site.strip()) or (not self.user.strip()):
-            self.custom_message_info(parent=self.root3, title="Error!", message="Please don't leave any fields empty.")
+            custom_message_info(parent=self.root3, title="Error!", message="Please don't leave any fields empty.")
             return
         self.entry= self.data.get(key)
         if self.entry:
@@ -489,7 +414,7 @@ class MyPasswords:
                     password= acc["password"]
                     a=1
             if a==0:
-                self.custom_message_info(parent=self.root3, title="Error!", message=f"Username/Email provided is not saved for {key.capitalize()}")
+                custom_message_info(parent=self.root3, title="Error!", message=f"Username/Email provided is not saved for {key.capitalize()}")
                 return
             else:
                 self.manage_search_btn.config(state="disabled")
@@ -504,7 +429,7 @@ class MyPasswords:
                 edit_btn=Button(self.root3,text="Edit",command=self.on_edit)
                 edit_btn.grid(column=2,row=1,sticky="WE")
         else:
-            self.custom_message_info(parent=self.root3,title="Error!",message=f"No data found for {key.capitalize()}")
+            custom_message_info(parent=self.root3,title="Error!",message=f"No data found for {key.capitalize()}")
 
 
     def on_edit(self):
@@ -515,7 +440,7 @@ class MyPasswords:
                 a+=1
 
         if a ==1:
-            self.custom_message_info(
+            custom_message_info(
                         parent=self.root3,
                         title="Error!",
                         message=(f"This account already exits for {self.site.capitalize()}."),
@@ -526,7 +451,7 @@ class MyPasswords:
             if self.user == acc["username"]:
                 #Checking if there are any changes
                 if (self.user_inpt.get() == acc["username"]) and (self.pwd_entry.get()==acc["password"]):
-                    self.custom_message_info(
+                    custom_message_info(
                         parent=self.root3,
                         title="Error!",
                         message=(f"No changes detected."),
@@ -534,7 +459,7 @@ class MyPasswords:
                     return
                 
                 if result["score"]<3:
-                    confirm = self.custom_message_askokcancel(
+                    confirm = custom_message_askokcancel(
                         parent=self.root3,
                         title=f"Editing data for {self.site.capitalize()}",
                         message=(
@@ -545,7 +470,7 @@ class MyPasswords:
                     )
 
                 elif result["score"]==3:
-                    confirm = self.custom_message_askokcancel(
+                    confirm = custom_message_askokcancel(
                         parent=self.root3,
                         title=f"Editing data for {self.site.capitalize()}",
                         message=(
@@ -556,7 +481,7 @@ class MyPasswords:
                     )
 
                 elif result["score"]==4:
-                    confirm = self.custom_message_askokcancel(
+                    confirm = custom_message_askokcancel(
                         parent=self.root3,
                         title=f"Editing data for {self.site.capitalize()}",
                         message=(
@@ -573,7 +498,7 @@ class MyPasswords:
                     acc["password"]= self.pwd_entry.get()
                     self.store.save(self.data)
 
-                    self.custom_message_info(parent=self.root3,title="Success!", message=f"You edited {self.user_inpt.get()} account data for {self.site.capitalize()}")
+                    custom_message_info(parent=self.root3,title="Success!", message=f"You edited {self.user_inpt.get()} account data for {self.site.capitalize()}")
                     self.root3.destroy()
                     self.root1.destroy()
                     break
@@ -582,7 +507,7 @@ class MyPasswords:
     def on_delete(self):
         for i,acc in enumerate(self.entry):
             if self.user == acc["username"]:
-                confirm=self.custom_message_askokcancel(
+                confirm=custom_message_askokcancel(
                     parent=self.root3,
                     title=f"Deleting data for {self.site.capitalize()}",
                     message=(
@@ -594,7 +519,7 @@ class MyPasswords:
                     return  
                 self.entry.pop(i)
                 self.store.save(self.data)
-                self.custom_message_info(parent=self.root3, title="Success!", message=f"You have deleted {self.user_inpt.get()} account data for {self.site.capitalize()}")
+                custom_message_info(parent=self.root3, title="Success!", message=f"You have deleted {self.user_inpt.get()} account data for {self.site.capitalize()}")
                 self.root3.destroy()
                 self.root1.destroy()
                 break
@@ -616,7 +541,7 @@ class MyPasswords:
         self.mpwd_inpt=Entry(self.root4,width=25,show="*")
         self.mpwd_inpt.grid(column=1,row=0)
 
-        self.show_info=Button(self.root4,text="Show",command=self.toggle_password)
+        self.show_info=Button(self.root4,width=8,text="Show",command=lambda:toggle_password(btn=self.show_info,ent=self.mpwd_inpt,state=self._show_state))
         self.show_info.grid(row=0,column=2)
 
         self.enter_btn=Button(self.root4,text="Confirm",command=self.on_verify_mpwd)
@@ -625,11 +550,10 @@ class MyPasswords:
         self.mpwd_inpt.focus()
         
 
-# --- Working here
     def on_verify_mpwd(self)->None:
         mpswd=self.mpwd_inpt.get()
         if mpswd == self.data["__MASTERPASSWORD"]["password"]:
-            self.custom_message_info(parent=self.root4,title="Success!",message="Press 'OK' to continue.")
+            custom_message_info(parent=self.root4,title="Success!",message="Press 'OK' to continue.")
             self.root4.destroy()
 
             #set new
@@ -656,7 +580,7 @@ class MyPasswords:
                 self.root5,
                 width=8,
                 text="Show",
-                command=lambda:self.toggle_password(
+                command=lambda:toggle_password(
                     btn=self.show_info,
                     ent=self._mpwd_inpt,
                     state=self._show_state
@@ -668,7 +592,7 @@ class MyPasswords:
                 self.root5,
                 width=8,
                 text="Show",
-                command=lambda:self.toggle_password(
+                command=lambda:toggle_password(
                     btn=self.confirm_show_info,
                     ent=self.confirm_mpwd_inpt,
                     state=self.confirm_show_state
@@ -682,7 +606,7 @@ class MyPasswords:
             self._mpwd_inpt.focus()
 
         else:
-            self.custom_message_info(parent=self.root4, title="Error!",message="Provide the correct password to continue.")
+            custom_message_info(parent=self.root4, title="Error!",message="Provide the correct password to continue.")
             return
         
 
@@ -691,19 +615,19 @@ class MyPasswords:
         key="__MASTERPASSWORD"
 
         if mpswd == "":
-            self.custom_message_info(
+            custom_message_info(
                 parent=self.root5,title="Error!",
                 message="To continue, set a new master password."
                 )
         
         elif mpswd != self.confirm_mpwd_inpt.get():
-            self.custom_message_info(
+            custom_message_info(
                 parent=self.root5,title="Error!",
                 message="The passwords don't match. Please verify and try again."
                 )
 
         elif mpswd == self.data[key]["password"]:
-            self.custom_message_info(
+            custom_message_info(
                 parent=self.root5,
                 title="Error!",
                 message="No changes detected."
@@ -712,14 +636,14 @@ class MyPasswords:
         else:
             result = zxcvbn(mpswd)
             if result["score"]<3:
-                self.custom_message_info(
+                custom_message_info(
                     self.root5,title="Error!",
                     message=f"Your password is too weak."
                     )
                 return
 
             elif result["score"] == 3:
-                confirm=self.custom_message_askokcancel(
+                confirm=custom_message_askokcancel(
                     parent=self.root5,
                     title="Confirm master password",
                     message=(
@@ -730,7 +654,7 @@ class MyPasswords:
                 )
 
             elif result["score"] == 4:
-                confirm=self.custom_message_askokcancel(
+                confirm=custom_message_askokcancel(
                     parent=self.root5,
                     title="Confirm master password",
                     message=(
@@ -743,94 +667,12 @@ class MyPasswords:
             if confirm:
                 self.data[key]={"password":mpswd}
                 self.store.save(self.data)
-                self.custom_message_info(parent=self.root5, title="Success!", message="Master password set!")
+                custom_message_info(parent=self.root5, title="Success!", message="Master password set!")
                 self.root5.destroy()
                 self.root1.destroy()
             if not confirm:
                 return
-
-
-    def custom_message_info(self, parent, title, message):
-            win= Toplevel(parent)
-            win.withdraw()
-            win.title(title)
-            win.configure(padx=10,pady=10)
-
-            win.resizable(False,False)
-            win.attributes("-topmost",True)
-            win.transient(parent)
-
-            parent.update_idletasks()
-            x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
-            y = parent.winfo_rooty()+(parent.winfo_height()//2-150)
-            win.geometry(f"+{x}+{y}") 
-
-            lbl = Label(win, text=message,font=("Arial",12,"bold"),justify="center")
-            lbl.pack(expand=True,pady=20)
-            btn = Button(win, text="OK",command=win.destroy,width=10)
-            btn.pack(pady=10)
-
-            win.deiconify()
-            win.grab_set()
-            btn.focus_set()
-            win.wait_window()
-
-
-    def custom_message_askokcancel(self, parent, title, message)-> bool:
-            self.result_message=False
-
-            self.win= Toplevel(parent)
-            self.win.withdraw()
-            self.win.title(title)
-            self.win.configure(padx=10,pady=10)
-
-            self.win.resizable(False,False)
-            self.win.attributes("-topmost",True)
-            self.win.transient(parent)
-
-            parent.update_idletasks()
-            x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
-            y = parent.winfo_rooty()+(parent.winfo_height()//2-150)
-            self.win.geometry(f"+{x}+{y}")
-
-            lbl = Label(self.win, text=message,font=("Arial",12,"bold"),justify="center")
-            lbl.pack(expand=True,pady=10)
-
-            btn_frame = Frame(self.win)
-            btn_frame.pack(pady=10)
-
-            ok_btn = Button(btn_frame, text="OK",command=self.on_ok,width=10)
-            ok_btn.pack(side="left",padx=20)
-
-            cancel_btn = Button(btn_frame, text="Cancel",command=self.on_cancel,width=10)
-            cancel_btn.pack(side="right",padx=20)
-
-            self.win.deiconify()
-            self.win.grab_set()
-            ok_btn.focus_set()
-            self.win.wait_window()
-
-            return self.result_message
-    
-
-    def on_ok(self):
-        self.result_message= True
-        self.win.destroy()
-    
-
-    def on_cancel(self):
-        self.result_message= False
-        self.win.destroy()
-
-
-    def toggle_password(self,btn,ent,state):
-        state["visible"] = not state["visible"]
-        if state["visible"]:
-            ent.config(show="")
-            btn.config(text="Hide")
-        else:
-            ent.config(show="*")
-            btn.config(text="Show")  
+  
 
 class MasterGUI:
     def __init__(self, root: Tk)-> None:
@@ -865,7 +707,7 @@ class MasterGUI:
                 self.root,
                 width=8,
                 text="Show",
-                command= lambda:self.toggle_password(
+                command= lambda:toggle_password(
                     btn=self.toggle_btn,
                     ent=self.pass_inpt,
                     state=self._show_state
@@ -877,7 +719,7 @@ class MasterGUI:
                 self.root,
                 width=8,
                 text="Show",
-                command= lambda: self.toggle_password(
+                command= lambda: toggle_password(
                     btn=self.conf_toggle_btn,
                     ent=self.conf_pass_inpt,
                     state= self._conf_show_state
@@ -896,7 +738,7 @@ class MasterGUI:
             self.pass_inpt = Entry(width=32,show="*")
             self.pass_inpt.grid(column=1, row=0, sticky="W")
 
-            self.toggle_btn= Button(self.root, text="Show",command= lambda: self.toggle_password(btn=self.toggle_btn,ent=self.pass_inpt,state=self._show_state))
+            self.toggle_btn= Button(self.root, width=8,text="Show",command= lambda: toggle_password(btn=self.toggle_btn,ent=self.pass_inpt,state=self._show_state))
             self.toggle_btn.grid(row=0,column=2)
 
             self.add_btn = Button(self.root,text="Confirm", width=10, command=self.on_verify)
@@ -904,35 +746,26 @@ class MasterGUI:
             self.pass_inpt.focus()
 
         
-    def toggle_password(self,btn,ent,state):
-        state["visible"] = not state["visible"]
-
-        if state["visible"]:
-            ent.config(show="")
-            btn.config(text="Hide")
-        else:
-            ent.config(show="*")
-            btn.config(text="Show")  
         
 
     def on_set(self)->None:
         mpswd=self.pass_inpt.get()
 
         if mpswd !=self.conf_pass_inpt.get():
-            self.custom_message_info(parent=self.root,title="Error!",message="The passwords do not match. Please verify and try again.")
+            custom_message_info(parent=self.root,title="Error!",message="The passwords do not match. Please verify and try again.")
             return
         elif mpswd == "":
-            self.custom_message_info(parent=self.root,title="Error!",message="You have to set a master password to continue.")
+            custom_message_info(parent=self.root,title="Error!",message="You have to set a master password to continue.")
             return
         
         # blocks passwords below lvl 3 
         result = zxcvbn(mpswd)
         if result["score"]<3:
-            self.custom_message_info(self.root,title="Error!", message=f"Your password is too weak!")
+            custom_message_info(self.root,title="Error!", message=f"Your password is too weak!")
             return
         
         elif result["score"] == 3:
-            confirm=self.custom_message_askokcancel(
+            confirm=custom_message_askokcancel(
                 parent=self.root,
                 title="Confirm master password",
                 message=(
@@ -943,7 +776,7 @@ class MasterGUI:
             )
 
         elif result["score"] == 4:
-            confirm=self.custom_message_askokcancel(
+            confirm=custom_message_askokcancel(
                 parent=self.root,
                 title="Confirm master password",
                 message=(
@@ -957,7 +790,7 @@ class MasterGUI:
             key="__MASTERPASSWORD"
             self.data[key]={"password":mpswd}
             self.store.save(self.data)
-            self.custom_message_info(parent=self.root, title="Success!", message="Master password set!")
+            custom_message_info(parent=self.root, title="Success!", message="Master password set!")
             self.result=True
             self.root.destroy()
         if not confirm:
@@ -967,83 +800,10 @@ class MasterGUI:
     def on_verify(self)->None:
         mpswd=self.pass_inpt.get()
         if mpswd == self.data["__MASTERPASSWORD"]["password"]:
-            self.custom_message_info(parent=self.root,title="Success!",message="Welcome Back!")
+            custom_message_info(parent=self.root,title="Success!",message="Welcome Back!")
             self.result=True
             self.root.destroy()
         else:
-            self.custom_message_info(parent=self.root, title="Error!",message="Provide the correct password to continue.")
+            custom_message_info(parent=self.root, title="Error!",message="Provide the correct password to continue.")
             return
     
-
-    def custom_message_info(self, parent, title, message):
-        win= Toplevel(parent)
-        win.withdraw()
-        win.title(title)
-        win.configure(padx=10,pady=10)
-
-        win.resizable(False,False)
-        win.attributes("-topmost",True)
-        win.transient(parent)
-
-        parent.update_idletasks()
-        x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
-        y = parent.winfo_rooty()+(parent.winfo_height()//2-150)
-        win.geometry(f"+{x}+{y}")
-
-        lbl = Label(win, text=message,font=("Arial",12,"bold"),justify="center")
-        lbl.pack(expand=True,pady=20)
-        btn = Button(win, text="OK",command=win.destroy,width=10)
-        btn.pack(pady=10)
-
-        win.deiconify()
-        win.grab_set()
-        btn.focus_set()
-        win.wait_window()
-
-
-    def custom_message_askokcancel(self, parent, title, message)-> bool:
-        self.result_message=False
-
-        self.win= Toplevel(parent)
-        self.win.withdraw()
-        self.win.title(title)
-        self.win.configure(padx=10,pady=10)
-
-        self.win.resizable(False,False)
-        self.win.attributes("-topmost",True)
-        self.win.transient(parent)
-
-        parent.update_idletasks()
-        x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
-        y = parent.winfo_rooty()+(parent.winfo_height()//2-150)
-        self.win.geometry(f"+{x}+{y}")
-
-        lbl = Label(self.win, text=message,font=("Arial",12,"bold"),justify="center")
-        lbl.pack(expand=True,pady=10)
-
-        btn_frame = Frame(self.win)
-        btn_frame.pack(pady=10)
-
-        ok_btn = Button(btn_frame, text="OK",command=self.on_ok,width=10)
-        ok_btn.pack(side="left",padx=20)
-
-        cancel_btn = Button(btn_frame, text="Cancel",command=self.on_cancel,width=10)
-        cancel_btn.pack(side="right",padx=20)
-
-        self.win.deiconify()
-        self.win.grab_set()
-        ok_btn.focus_set()
-        self.win.wait_window()
-
-        return self.result_message
-
-
-    def on_ok(self):
-        self.result_message= True
-        self.win.destroy()
-    
-
-    def on_cancel(self):
-        self.result_message= False
-        self.win.destroy()
-

@@ -59,7 +59,14 @@ if  mpawd== True:
 #   btn becomes disabled, becouse on the next stage it has to become disabled. - FIXED
 # Migrar para SQLite + SQLcipher-
 # Logo mais original -
-# Organizar/refactor código -
+
+# --- Working here
+# Organizar/refactor código - Inicio 1050 linhas
+#   Criar uma class para os dialogos - DONE - 150 linhas -> ~900 linhas
+# 
+
+# Bug found! When editing an account, erasing the password and pressing edit doesnt do nothing. It should show
+#   error not leave any field empty. Do that for both password and username check
 # Comentar código em ingles
 # Arranjar maneira de fazer backup do ficheiro encryptado para email.
 #   No canto inferior direito da janela "My Password's", ter um botao que,
