@@ -1,5 +1,6 @@
 from random import choice, randint, shuffle
 from tkinter import Button,Entry,Toplevel,Label,Frame,Tk
+from app.store_json import JsonStore
 
 def normalize_site(name: str) -> str:
 #Normalize website key to avoid case/whitespace issues.
@@ -17,7 +18,6 @@ def generate_password() -> str:
     password_list += [choice(symbols) for _ in range(randint(2, 4))]
     shuffle(password_list)
     return "".join(password_list)
-
 
 
 def custom_message_info(parent:Tk, title, message):
@@ -103,4 +103,68 @@ def toggle_password(btn:Button,ent:Entry,state:dict):
         ent.config(show="*")
         btn.config(text="Show")  
 
+class AccountService:
+    def __init__(self, store: JsonStore):
+        self.store = store
+        self.data= self.store.load()
+
+
+    def list_all(self):
+        for site, accounts in self.data.items():
+            if site =="__MASTERPASSWORD":
+                continue
+            for acc in accounts:
+                yield (site,acc["username"],acc["password"])
+
+    def find(self,site:str,username:str):
+        key = normalize_site(site)
+        for acc in self.data.get(key,[]):
+            if acc["username"]==username:
+                return key, acc
+        return None, None
+    
+
+    def check_acc(self,site:str,username:str):
+        key = normalize_site(site)
+        if not any (a["username"]==username for a in self.data[key]):
+            raise ValueError[f""]
+              # A TRABALHAR AQUI   
+    
+
+    def add(self, site:str, username:str, password: str):
+        key = normalize_site(site)
+        self.data.setdefault(key,[])
+        if any (a["username"]==username for a in self.data[key]):
+            raise ValueError("Account already exists for this site/username.")
+        self.data[key].append({"username":username,"password":password})
+        self.store.save(self.data)
+
+
+    def edit (self,site:str,username:str,new_username:str,new_password:str):
+        key, acc = self.find(site,username)
+        if not acc:
+            raise KeyError ("Account not found.")
+        
+        # prevenir duplicados se alterar o username
+        if new_username != username and any (a["username"]==new_username for a in self.data[key]):
+            raise ValueError ("Another account with this username already exists for this site.")
+        
+        acc["username"] = new_username
+        acc["password"] = new_password
+        self.store.save(self.data)
+
+
+    def delete (self,site:str,username:str):
+        key = normalize_site(site)
+        arr = self.data.get(key,[])
+        for i, a in enumerate(arr):
+            if a ["username"]== username:
+                arr.pop(i)
+                if not arr: 
+                    self.data.pop(key,None)
+                self.store.save(self.data)
+                return
+        raise KeyError("Account not found to delete.")
+        
+        
         
