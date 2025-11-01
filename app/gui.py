@@ -1,6 +1,6 @@
-from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox,Toplevel, Frame, StringVar, Scrollbar
+from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox,Toplevel, Frame, StringVar, Scrollbar,ttk
 from pathlib import Path
-from app.service import generate_password, normalize_site, custom_message_askokcancel, custom_message_info, toggle_password
+from app.service import generate_password, normalize_site, custom_message_askokcancel, custom_message_info, toggle_password, AccountService
 from app.store_json import JsonStore
 from zxcvbn import zxcvbn
 
@@ -56,7 +56,8 @@ class AppGUI:
             )
         )
         self.toggle_btn.grid(column=2,row=3,sticky="we")
-        self.generate_btn = Button(text="Generate password", command=self.on_generate).grid(column=2,row=2,sticky="we")
+        self.generate_btn = Button(text="Generate password", command=self.on_generate)
+        self.generate_btn.grid(column=2,row=2,sticky="we")
 
         self.add_btn = Button(text="Add", width=50, command=self.on_add)
         self.add_btn.grid(column=1, row=5, columnspan=2, sticky="W")
@@ -149,9 +150,97 @@ class AppGUI:
     def on_cls(self)-> None:
         MyPasswords(self.root)
 
+## -- TESTE
+class PasswordListView:
+    def __init__(self, parent:Tk):
+        self.parent = parent
+        self.canvas = Canvas(parent, highlightthickness=0)
+        self.scrollbar = Scrollbar(parent, orient="vertical", command=self.canvas.yview)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.canvas.grid(row=0, column=0, sticky="nsew")
+        self.scrollbar.grid(row=0, column=1, sticky="ns")
+
+        parent.grid_rowconfigure(0, weight=1)
+        parent.grid_columnconfigure(0, weight=1)
+
+        # frame interno
+        self.inner_frame = Frame(self.canvas)
+        self.window_id = self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw")
+
+        # bindings de layout e scroll
+        self.inner_frame.bind("<Configure>", self._on_inner_configure)
+        self.canvas.bind("<Configure>", self._on_canvas_configure)
+        self._smooth_scroll(self.canvas)
+
+        # armazena refs de linhas
+        self.rows = []
+
+    def _on_inner_configure(self, event):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def _on_canvas_configure(self, event):
+        self.canvas.itemconfigure(self.window_id, width=self.canvas.winfo_width())
+
+    def _smooth_scroll(self, canvas:Canvas, step=0.008):
+        def clamp(x, lo=0.0, hi=1.0): return max(lo, min(hi, x))
+        def move(sign):
+            first, _ = canvas.yview()
+            canvas.yview_moveto(clamp(first + sign * step))
+
+        system = str(canvas.tk.call('tk', 'windowingsystem'))
+        if system == "x11":
+            canvas.bind_all("<Button-4>", lambda e: move(-1), add="+")
+            canvas.bind_all("<Button-5>", lambda e: move(+1), add="+")
+        elif system == "aqua":
+            canvas.bind_all("<MouseWheel>", lambda e: move(-1 if e.delta > 0 else +1), add="+")
+        else:
+            canvas.bind_all("<MouseWheel>", lambda e: move(-1 if e.delta > 0 else +1), add="+")
+
+    def render(self, data: dict):
+        """Renderiza as linhas a partir de um dicionário de sites e contas."""
+        # Limpa linhas antigas
+        for r in self.rows:
+            for w in r["widgets"]:
+                w.destroy()
+        self.rows.clear()
+
+        cnt = 0
+        bg_default = self.parent.cget("bg")
+
+        for site, accounts in data.items():
+            if site == "__MASTERPASSWORD":
+                continue
+            for acc in accounts:
+                username = acc["username"]
+                password = acc["password"]
+
+                bg = bg_default
+                site_var = StringVar(value=site.capitalize())
+                user_var = StringVar(value=username)
+                pass_var = StringVar(value=password)
+
+                site_ent = Entry(self.inner_frame, textvariable=site_var, state="readonly",
+                                 relief="flat", readonlybackground=bg, fg="black", width=15)
+                user_ent = Entry(self.inner_frame, textvariable=user_var, state="readonly",
+                                 relief="flat", readonlybackground=bg, fg="black", width=25)
+                pass_ent = Entry(self.inner_frame, textvariable=pass_var, state="readonly",
+                                 relief="flat", readonlybackground=bg, fg="black", width=20)
+
+                site_ent.grid(column=0, row=cnt, sticky="w", padx=10, pady=5)
+                user_ent.grid(column=1, row=cnt, sticky="w", padx=10, pady=5)
+                pass_ent.grid(column=2, row=cnt, sticky="w", padx=10, pady=5)
+
+                self.rows.append({
+                    "widgets": (site_ent, user_ent, pass_ent),
+                    "data": (site, username, password)
+                })
+                cnt += 1
+
+
+## -- teste
 class MyPasswords:
     def __init__(self, root1:Tk):
-        
         self.root1=Toplevel(root1) 
         self.root1.transient(root1)
         self.root1.grab_set() 
@@ -167,119 +256,25 @@ class MyPasswords:
         self.root1.grid_columnconfigure(2,weight=1)
 
         self.store =JsonStore(Path("Passwords_data.json"))
+        self.service= AccountService(self.store)
         self.data = self.store.load()
         self.bg=self.root1.cget("bg")
         
         self.root1.bind("<Return>", lambda e:self.search_btn.invoke())
         self.root1.bind("<KP_Enter>", lambda e:self.search_btn.invoke())
-
-        left_container= Frame(self.root1)
-        left_container.grid(row=1,column=0,columnspan=3,sticky="nsew",padx=0,pady=0)
         
         right_container = Frame(self.root1)
         right_container.grid(row=1,column=4,sticky="n")
 
-        left_canvas=Canvas(left_container, highlightthickness=0)
-        left_canvas.grid(row=0,column=0,sticky="nsew")
+        Label(self.root1, text="Site", font=("Arial", 10, "bold")).grid(column=0, row=0, sticky="w", padx=10, pady=5)
+        Label(self.root1, text="Email/Username", font=("Arial", 10, "bold")).grid(column=1, row=0, sticky="w", padx=10, pady=5)
+        Label(self.root1, text="Password", font=("Arial", 10, "bold")).grid(column=2, row=0, sticky="w", padx=10, pady=5)
 
-        left_scrollbar = Scrollbar(left_container,orient="vertical",command=left_canvas.yview)
-        left_scrollbar.grid(row=0,column=1,sticky="ns")
+        left_container = Frame(self.root1)
+        left_container.grid(row=1, column=0, columnspan=3, sticky="nsew", padx=0, pady=0)
 
-        left_container.grid_rowconfigure(0,weight=1)
-        left_container.grid_columnconfigure(0,weight=1)
-
-        inner_frame = Frame (left_canvas)
-        win_id= left_canvas.create_window((0,0),window=inner_frame,anchor="nw")
-
-        left_canvas.configure(yscrollcommand=left_scrollbar.set)
-
-
-        def _on_inner_configure(event):
-            #updates scrollregion when inner frame size changes
-            left_canvas.configure(scrollregion=left_canvas.bbox("all"))
-        
-        inner_frame.bind("<Configure>",_on_inner_configure)
-
-        def _on_canvas_configure(event):
-            # Match inner_frame width to the visible canvas width
-            left_canvas.itemconfigure(win_id,width=left_canvas.winfo_width())
-
-        left_canvas.bind("<Configure>",_on_canvas_configure)
-
-    
-        def smooth_scroll(canvas,step=0.008):
-            #vertical scroll for tkinter canvas
-
-            def clamp(x,lo=0.0,hi=1.0):
-                return max(lo,min(hi,x))
-
-            def move(sign):
-                first,_last=canvas.yview()
-                canvas.yview_moveto(clamp(first+sign*step))
-
-            system = str(canvas.tk.call('tk','windowingsystem'))
-            #linux
-            if system == "x11" :
-                canvas.bind_all("<Button-4>", lambda e: move(-1),add="+")
-                canvas.bind_all("<Button-5>", lambda e: move(+1),add="+")
-            #macOS
-            elif system== "aqua":
-                canvas.bind_all("<MouseWheel>", lambda e: move(-1 if e.delta > 0 else +1),add="+")
-            #windows
-            else:
-                canvas.bind_all("<MouseWheel>", lambda e: move(-1 if e.delta > 0 else +1),add="+")
-
-        smooth_scroll(left_canvas)
-
-        cnt=1
-        Label(self.root1, text="Site", font=("Arial",10,"bold")).grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
-        Label(self.root1, text="Email/Username", font=("Arial",10,"bold")).grid(column=1, row= 0 ,sticky="w",padx=10,pady=5)
-        Label(self.root1, text="Password", font=("Arial",10,"bold")).grid(column=2, row= 0 ,sticky="w",padx=10,pady=5)
-        
-        for sites,accounts in self.data.items():
-            if sites == "__MASTERPASSWORD":
-                continue
-            for acc in accounts:
-                username1= acc["username"]
-                password1= acc["password"]
-
-                #site
-                site_var=StringVar(value=sites.capitalize())
-                site_entry= Entry(inner_frame,
-                                  textvariable=site_var,
-                                  state="readonly",
-                                  relief="flat",
-                                  readonlybackground=self.bg,
-                                  fg="black",
-                                  exportselection=1,
-                                  width=15)
-                site_entry.grid(column=0,row=cnt,sticky="w",padx=10,pady=5)
-
-                #user
-                user_var = StringVar(value=username1)
-                user_entry= Entry(inner_frame,
-                                  textvariable=user_var,
-                                  state="readonly",
-                                  relief="flat",
-                                  readonlybackground=self.bg,
-                                  fg="black",
-                                  exportselection=1,
-                                  width=25)
-                user_entry.grid(column=1,row=cnt,sticky="w",padx=10,pady=5)
-
-                #password
-                pass_var=StringVar(value=password1)
-                pass_entry=Entry(inner_frame,
-                                 textvariable=pass_var,
-                                 state="readonly",
-                                 relief="flat",
-                                 readonlybackground=self.bg,
-                                 fg="black",
-                                 exportselection=1,
-                                 width=20)
-                pass_entry.grid(column=2,row=cnt,sticky="w",padx=10,pady=5) 
-
-                cnt+=1
+        self.password_list = PasswordListView(left_container)
+        self.password_list.render(self.data)
         
         self.wbsite=Entry(self.root1,width=20)
         self.wbsite.grid(column=3,row=0)
@@ -304,16 +299,17 @@ class MyPasswords:
         if not site.strip():
             custom_message_info(parent=self.root1,title="Error!", message="Please type a website to search.")
             return
-        key = normalize_site(site)
-        entry = self.data.get(key)
+        #check if exists
+        entry = self.data.get(normalize_site(site))
+
         if entry:
             root2=Toplevel(self.root1)
-            root2.title(key.capitalize())
+            root2.title(site.capitalize())
             Label(root2, text="Email/Username", font=("Arial",10,"bold")).grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
             Label(root2, text="Password", font=("Arial",10,"bold")).grid(column=1, row= 0 ,sticky="w",padx=10,pady=5)
             root2.transient(self.root1) 
-
             root2.grab_set()
+
             cnt=1
             for acc in entry:
                 email = acc["username"]
@@ -343,7 +339,6 @@ class MyPasswords:
                 pass_entry.grid(column=1,row=cnt,sticky="w",padx=10,pady=5)
 
                 cnt+=1
-            #root2.mainloop()
         else:
             custom_message_info(parent=self.root1, title="Error!", message=f"No data saved for {site.capitalize()}")
 
@@ -406,6 +401,7 @@ class MyPasswords:
         if (not self.site.strip()) or (not self.user.strip()):
             custom_message_info(parent=self.root3, title="Error!", message="Please don't leave any fields empty.")
             return
+        
         self.entry= self.data.get(key)
         if self.entry:
             a=0
@@ -423,10 +419,10 @@ class MyPasswords:
                 self.pwd_entry.grid(column=1,row=2)
                 self.pwd_entry.insert(0,f"{password}")
 
-                delete_btn=Button(self.root3, text="Delete",command=self.on_delete)
+                delete_btn=Button(self.root3, text="Delete",command=lambda:self.on_delete(site=self.site,username=self.user))
                 delete_btn.grid(column=2,row=2,sticky="WE")
 
-                edit_btn=Button(self.root3,text="Edit",command=self.on_edit)
+                edit_btn=Button(self.root3,text="Edit",command=lambda:self.on_edit())
                 edit_btn.grid(column=2,row=1,sticky="WE")
         else:
             custom_message_info(parent=self.root3,title="Error!",message=f"No data found for {key.capitalize()}")
@@ -504,25 +500,23 @@ class MyPasswords:
                     break
 
 
-    def on_delete(self):
-        for i,acc in enumerate(self.entry):
-            if self.user == acc["username"]:
-                confirm=custom_message_askokcancel(
-                    parent=self.root3,
-                    title=f"Deleting data for {self.site.capitalize()}",
-                    message=(
-                        f"Username/Email: {self.user}\nPassword: {self.pwd_entry.get()}\n"
-                        f"Press 'OK' to delete data or press 'Cancel'."
-                        )
+    def on_delete(self,site,username):
+        confirm=custom_message_askokcancel(
+            parent=self.root3,
+            title=f"Deleting data for {self.site.capitalize()}",
+            message=(
+                f"Username/Email: {self.user}\nPassword: {self.pwd_entry.get()}\n\n"
+                f"Press 'OK' to delete data or press 'Cancel'."
                 )
-                if not confirm:
-                    return  
-                self.entry.pop(i)
-                self.store.save(self.data)
-                custom_message_info(parent=self.root3, title="Success!", message=f"You have deleted {self.user_inpt.get()} account data for {self.site.capitalize()}")
-                self.root3.destroy()
-                self.root1.destroy()
-                break
+        )
+        if not confirm:
+            return
+        
+        self.service.delete(site,username)
+        custom_message_info(parent=self.root3,title="Success!",message=f"You have deleted {username} account data.")
+        # here we can instead of closing the window, dinamically update the pasword list view
+        self.root3.destroy()
+        self.root1.destroy()
 
 
     def on_manage_mpwd(self):
