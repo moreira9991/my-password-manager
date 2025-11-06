@@ -65,7 +65,7 @@ if  mpawd== True:
 #   Criar uma class para os dialogos - DONE - 150 linhas -> ~900 linhas
 # Resolver bug de editar acc
 # Correção de .grid()
-# Ver se vale a pena Treeview
+# 
 
 # Bug found! When editing an account, erasing the password and pressing edit doesnt do nothing. It should show
 #   error not leave any field empty. Do that for both password and username check

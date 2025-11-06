@@ -1,9 +1,10 @@
 from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox,Toplevel, Frame, StringVar, Scrollbar,ttk
 from pathlib import Path
-from app.service import generate_password, normalize_site, custom_message_askokcancel, custom_message_info, toggle_password, AccountService
+from app.service import generate_password, normalize_site, custom_message_askokcancel, custom_message_info, toggle_password, AccountService, add_password_msg, edit_password_msg, master_password_msg
 from app.store_json import JsonStore
 from zxcvbn import zxcvbn
 
+## CHECKING CODE --> REFACTORING
 class AppGUI:
     def __init__(self, root: Tk)-> None:
         self.root = root
@@ -76,6 +77,8 @@ class AppGUI:
         self.pass_inpt.delete(0, END)
         self.pass_inpt.insert(0, password)
 
+## ---> ALL GOOD
+
     #Adds account to JSON -> encripted DB soon
     def on_add(self) -> None:
         site = self.web_inpt.get()
@@ -83,10 +86,13 @@ class AppGUI:
         pwd = self.pass_inpt.get()
         key = normalize_site(site)
 
+        # checks if entrys are empty
         if not site.strip() or not username.strip() or not pwd.strip():
             custom_message_info(self.root,title="Error!",message="Please don't leave any fields empty.")
             return
         
+## ---> ALL GOOD
+
         # Checking for duplicate username
         checking_username = self.data.get(key)
         if checking_username:
@@ -95,39 +101,7 @@ class AppGUI:
                     custom_message_info(parent=self.root,title="Error!",message=f"{username} account allready saved for {site.capitalize()}!")
                     return
         #Checks for password strength
-        result= zxcvbn(pwd)
-        if result["score"]<3:
-            confirm = custom_message_askokcancel(
-                parent=self.root,
-                title=site.capitalize(),
-                message=(
-                    "Warning!\n"
-                    "This password is weak!\n\n"
-                    f"Email/Username: {username}\nPassword: {pwd}\n\n"
-                    f"Press 'OK' to save data or press 'Cancel' to edit data.")
-            )
-        
-        elif result["score"]==3:
-            confirm = custom_message_askokcancel(
-                parent=self.root,
-                title=site.capitalize(),
-                message=(
-                    "This password is strong!\n\n"
-                    f"Email/Username: {username}\nPassword: {pwd}\n\n"
-                    f"Press 'OK' to save data or press 'Cancel' to edit data.")
-            )
-        
-        elif result["score"]==4:
-            confirm = custom_message_askokcancel(
-                parent=self.root,
-                title=site.capitalize(),
-                message=(
-                    "This password is very strong!\n\n"
-                    f"Email/Username: {username}\nPassword: {pwd}\n\n"
-                    f"Press 'OK' to save data or press 'Cancel' to edit data.")
-            )
-        
-        if not confirm:
+        if not add_password_msg(parent=self.root, site=site, pwd=pwd, user=username):
             return
         
         if key not in self.data:
@@ -150,7 +124,7 @@ class AppGUI:
     def on_cls(self)-> None:
         MyPasswords(self.root)
 
-## -- TESTE
+
 class PasswordListView:
     def __init__(self, parent:Tk):
         self.parent = parent
@@ -198,7 +172,7 @@ class PasswordListView:
             canvas.bind_all("<MouseWheel>", lambda e: move(-1 if e.delta > 0 else +1), add="+")
 
     def render(self, data: dict):
-        """Renderiza as linhas a partir de um dicionário de sites e contas."""
+        #Renderiza as linhas a partir de um dicionário de sites e contas."""
         # Limpa linhas antigas
         for r in self.rows:
             for w in r["widgets"]:
@@ -237,8 +211,6 @@ class PasswordListView:
                 })
                 cnt += 1
 
-
-## -- teste
 class MyPasswords:
     def __init__(self, root1:Tk):
         self.root1=Toplevel(root1) 
@@ -429,7 +401,8 @@ class MyPasswords:
 
 
     def on_edit(self):
-        result=zxcvbn(self.pwd_entry.get())
+        ## --> refactor here1
+        #result=zxcvbn(self.pwd_entry.get())
         a=0
         for acc in self.entry:
             if (self.user_inpt.get()== acc["username"]) and (self.user_inpt.get()!=self.user):
@@ -454,40 +427,8 @@ class MyPasswords:
                         )
                     return
                 
-                if result["score"]<3:
-                    confirm = custom_message_askokcancel(
-                        parent=self.root3,
-                        title=f"Editing data for {self.site.capitalize()}",
-                        message=(
-                            "Warning!\nThis password is weak!\n\n"
-                            f"Email/Username: {self.user_inpt.get()}\nPassword: {self.pwd_entry.get()}\n\n"
-                            f"Press 'OK' to save data or press 'Cancel' to edit data"
-                            )
-                    )
-
-                elif result["score"]==3:
-                    confirm = custom_message_askokcancel(
-                        parent=self.root3,
-                        title=f"Editing data for {self.site.capitalize()}",
-                        message=(
-                            "This password is strong!\n\n"
-                            f"Email/Username: {self.user_inpt.get()}\nPassword: {self.pwd_entry.get()}\n\n"
-                            f"Press 'OK' to save data or press 'Cancel' to edit data"
-                            )
-                    )
-
-                elif result["score"]==4:
-                    confirm = custom_message_askokcancel(
-                        parent=self.root3,
-                        title=f"Editing data for {self.site.capitalize()}",
-                        message=(
-                            "This password is very strong!\n\n"
-                            f"Email/Username: {self.user_inpt.get()}\nPassword: {self.pwd_entry.get()}\n\n"
-                            f"Press 'OK' to save data or press 'Cancel' to edit data"
-                            )
-                    )
-                    
-                if not confirm:
+                if not edit_password_msg(parent=self.root3,site=self.site,pwd=self.pwd_entry.get(),user=self.user_inpt.get()):    
+            
                     return  
                 else:
                     acc["username"]= self.user_inpt.get()
@@ -498,7 +439,7 @@ class MyPasswords:
                     self.root3.destroy()
                     self.root1.destroy()
                     break
-
+            ## --> refactor here1
 
     def on_delete(self,site,username):
         confirm=custom_message_askokcancel(
@@ -603,10 +544,12 @@ class MyPasswords:
             custom_message_info(parent=self.root4, title="Error!",message="Provide the correct password to continue.")
             return
         
-
+## -->  NEED TO REFACTOR HERE
     def on_edit_mpw(self)->None:
         mpswd=self._mpwd_inpt.get()
         key="__MASTERPASSWORD"
+
+        ## --> refactor here
 
         if mpswd == "":
             custom_message_info(
@@ -626,46 +569,20 @@ class MyPasswords:
                 title="Error!",
                 message="No changes detected."
             )
+
+            ## --> refactor here
         
         else:
-            result = zxcvbn(mpswd)
-            if result["score"]<3:
-                custom_message_info(
-                    self.root5,title="Error!",
-                    message=f"Your password is too weak."
-                    )
-                return
-
-            elif result["score"] == 3:
-                confirm=custom_message_askokcancel(
-                    parent=self.root5,
-                    title="Confirm master password",
-                    message=(
-                        "Your password is strong!\n"
-                        f"Set {mpswd} as master password?\n"
-                        f"Press 'OK' to continue or press 'Cancel'."
-                        )
-                )
-
-            elif result["score"] == 4:
-                confirm=custom_message_askokcancel(
-                    parent=self.root5,
-                    title="Confirm master password",
-                    message=(
-                        "Your password is very strong!\n"
-                        f"Set {mpswd} as master password?\n"
-                        f"Press 'OK' to continue or press 'Cancel'."
-                        )
-                )
-
-            if confirm:
+            if master_password_msg(parent=self.root5,pwd=mpswd):
                 self.data[key]={"password":mpswd}
                 self.store.save(self.data)
                 custom_message_info(parent=self.root5, title="Success!", message="Master password set!")
                 self.root5.destroy()
                 self.root1.destroy()
-            if not confirm:
+            else:
                 return
+            
+## --> NEED TO REFACTOR HERE
   
 
 class MasterGUI:
@@ -739,11 +656,10 @@ class MasterGUI:
             self.add_btn.grid(row=0,column=3)
             self.pass_inpt.focus()
 
-        
-        
-
     def on_set(self)->None:
         mpswd=self.pass_inpt.get()
+
+        ## --> refactor here
 
         if mpswd !=self.conf_pass_inpt.get():
             custom_message_info(parent=self.root,title="Error!",message="The passwords do not match. Please verify and try again.")
@@ -752,42 +668,18 @@ class MasterGUI:
             custom_message_info(parent=self.root,title="Error!",message="You have to set a master password to continue.")
             return
         
-        # blocks passwords below lvl 3 
-        result = zxcvbn(mpswd)
-        if result["score"]<3:
-            custom_message_info(self.root,title="Error!", message=f"Your password is too weak!")
-            return
-        
-        elif result["score"] == 3:
-            confirm=custom_message_askokcancel(
-                parent=self.root,
-                title="Confirm master password",
-                message=(
-                    "Your master password is strong!\n\n"
-                    f"Set {mpswd} as master password?\n\n"
-                    f"Press 'OK' to continue or press 'Cancel'."
-                    )
-            )
+        ## --> refactor here
 
-        elif result["score"] == 4:
-            confirm=custom_message_askokcancel(
-                parent=self.root,
-                title="Confirm master password",
-                message=(
-                    "Your master password is very strong!\n\n"
-                    f"Set {mpswd} as master password?\n\n"
-                    f"Press 'OK' to continue or press 'Cancel'."
-                    )
-            )
-
-        if confirm:
+        if master_password_msg(parent=self.root,pwd=mpswd):
+            ## --> refactor here
             key="__MASTERPASSWORD"
             self.data[key]={"password":mpswd}
             self.store.save(self.data)
+            ## --> refactor here
             custom_message_info(parent=self.root, title="Success!", message="Master password set!")
             self.result=True
             self.root.destroy()
-        if not confirm:
+        else:
             return
 
 

@@ -1,6 +1,7 @@
 from random import choice, randint, shuffle
 from tkinter import Button,Entry,Toplevel,Label,Frame,Tk
 from app.store_json import JsonStore
+from zxcvbn import zxcvbn
 
 def normalize_site(name: str) -> str:
 #Normalize website key to avoid case/whitespace issues.
@@ -92,6 +93,41 @@ def custom_message_askokcancel(parent:Tk, title, message)-> bool:
 
     return result_message
 
+def password_strength_score(score: int) -> str:
+    return ["very weak","weak","okay","strong","very strong"][score]
+
+def add_password_msg(parent:Tk,site:str,pwd:str,user:str):
+    result = zxcvbn(pwd)["score"]
+    msg=password_strength_score(result)
+    return custom_message_askokcancel(parent=parent, title=site.capitalize(),message=(
+                    f"This password is {msg}!\n\n"
+                    f"Email/Username: {user}\nPassword: {pwd}\n\n"
+                    "Press 'OK' to save data or press 'Cancel' to edit data.")
+            )
+
+
+def edit_password_msg(parent:Tk,site:str,pwd:str,user:str):
+    result = zxcvbn(pwd)["score"]
+    msg=password_strength_score(result)
+    return custom_message_askokcancel(parent=parent, title=f"Editing data for {site.capitalize()}.",message=(
+                    f"This password is {msg}!\n\n"
+                    f"Email/Username: {user}\nPassword: {pwd}\n\n"
+                    "Press 'OK' to save data or press 'Cancel' to edit data.")
+            )
+
+
+def master_password_msg(parent:Tk,pwd:str):
+    result = zxcvbn(pwd)["score"]
+    if result<3:
+        custom_message_info(parent=parent,title="Error!",message="Stronger password required.")
+        return
+    msg=password_strength_score(result)
+    return custom_message_askokcancel(parent=parent, title=f"Confirm master password.",message=(
+                    f"This password is {msg}!\n\n"
+                    f"Set {pwd} as master password?\n\n"
+                    "Press 'OK' to continue or press 'Cancel'.")
+    )
+             
 
 def toggle_password(btn:Button,ent:Entry,state:dict):
     # Toggle password visibility in Entry widget
@@ -167,4 +203,5 @@ class AccountService:
         raise KeyError("Account not found to delete.")
         
         
+    
         
