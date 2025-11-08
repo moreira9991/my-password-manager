@@ -109,7 +109,7 @@ def add_password_msg(parent:Tk,site:str,pwd:str,user:str):
 def edit_password_msg(parent:Tk,site:str,pwd:str,user:str):
     result = zxcvbn(pwd)["score"]
     msg=password_strength_score(result)
-    return custom_message_askokcancel(parent=parent, title=f"Editing data for {site.capitalize()}.",message=(
+    return custom_message_askokcancel(parent=parent, title=f"Editing data for {site.capitalize()}",message=(
                     f"This password is {msg}!\n\n"
                     f"Email/Username: {user}\nPassword: {pwd}\n\n"
                     "Press 'OK' to save data or press 'Cancel' to edit data.")
@@ -152,20 +152,25 @@ class AccountService:
             for acc in accounts:
                 yield (site,acc["username"],acc["password"])
 
+
+#done
     def find(self,site:str,username:str):
         key = normalize_site(site)
         for acc in self.data.get(key,[]):
             if acc["username"]==username:
-                return key, acc
-        return None, None
+                return acc 
+        return None
     
 
-    def check_acc(self,site:str,username:str):
-        key = normalize_site(site)
-        if not any (a["username"]==username for a in self.data[key]):
-            raise ValueError[f""]
-              # A TRABALHAR AQUI   
-    
+
+#done
+#checks if userinpt allready exists in data
+    def check_acc(self,entry,check_user:str,username_inpt:str):
+        for acc in entry:
+            if (username_inpt== acc["username"]) and (username_inpt!=check_user):
+                return True
+
+        
 
     def add(self, site:str, username:str, password: str):
         key = normalize_site(site)
@@ -176,32 +181,91 @@ class AccountService:
         self.store.save(self.data)
 
 
-    def edit (self,site:str,username:str,new_username:str,new_password:str):
-        key, acc = self.find(site,username)
-        if not acc:
-            raise KeyError ("Account not found.")
-        
-        # prevenir duplicados se alterar o username
-        if new_username != username and any (a["username"]==new_username for a in self.data[key]):
-            raise ValueError ("Another account with this username already exists for this site.")
-        
-        acc["username"] = new_username
-        acc["password"] = new_password
-        self.store.save(self.data)
-
-
-    def delete (self,site:str,username:str):
+# done
+# edits accounts, before checking and blocking for unwanted interactions
+    def edit (self,main_window:Tk,window:Tk,site:str,username:str,new_username:str,new_password:str):
         key = normalize_site(site)
-        arr = self.data.get(key,[])
-        for i, a in enumerate(arr):
-            if a ["username"]== username:
-                arr.pop(i)
-                if not arr: 
-                    self.data.pop(key,None)
+        entry=self.data.get(key)
+
+        if self.check_acc(entry=entry,check_user=username,username_inpt=new_username):
+            custom_message_info(
+                        parent=window,
+                        title="Error!",
+                        message=(f"This account already exits for {site.capitalize()}."),
+                        )
+            return
+
+        for acc in entry:
+            if username == acc["username"]:
+                #checking for invalid inputs
+                if (new_username == acc["username"]) and (new_password == acc ["password"]):
+                    custom_message_info(parent=window, title="Error!", message=(
+                        "No changes detected."
+                    ))
+                    return
+                
+                if (not new_username.strip()) or (not new_password.strip()):
+                    custom_message_info(parent=window, title="Error!", message=(
+                        "Don't leave any fields empty"
+                    ))
+                    return
+                
+                #confirm change
+                if edit_password_msg(parent=window,site=site,pwd=new_password,user=new_username):
+                    acc["username"]= new_username
+                    acc["password"]= new_password
+                    self.store.save(self.data)
+
+                    custom_message_info(parent=window,title="Success!", message=f"You edited {new_username} account data for {site.capitalize()}")
+                    window.destroy()
+                    main_window.destroy()
+                    break
+                else:
+                    return
+
+
+# done
+    def delete (self,main_window:Tk,window:Tk,site:str,username:str,pwd:str):
+        if custom_message_askokcancel(
+            parent=window,
+            title=f"Deleting data for {site.capitalize()}",
+            message=f"Username/Email: {username}\nPassword:{pwd}\n\nPress 'OK' to delete data or press 'Cancel'."
+            ):
+            key = normalize_site(site)
+            arr = self.data.get(key,[])
+            for i, a in enumerate(arr):
+                if a ["username"]== username:
+                    arr.pop(i)
+                    if not arr: 
+                        self.data.pop(key,None)
+                    self.store.save(self.data)
+            
+            custom_message_info(parent=window,title="Success!",message=f"You have deleted {username} account data.")
+            window.destroy()
+            main_window.destroy()
+        else:
+            return
+        
+
+    def master_pwd_set (self,main_window:Tk,window:Tk,master_pwd:str,confirm_m_pwd):
+        key ="__MASTERPASSWORD"
+        if not master_pwd.strip():
+            custom_message_info(parent=window, title="Error!", message="To continue, set a new master password.")
+            return
+        
+        elif master_pwd != confirm_m_pwd:
+            custom_message_info(parent=window,title="Error!",message="The passwords don't match. Please verify and try again.")
+            return
+
+        elif master_pwd == self.data[key]["password"]:
+            custom_message_info(parent=window,title="Error!",message="No changes detected.")
+            return
+
+        else:
+            if master_password_msg(parent=window,pwd=master_pwd):
+                self.data[key]={"password":master_pwd}
                 self.store.save(self.data)
-                return
-        raise KeyError("Account not found to delete.")
-        
-        
-    
-        
+                custom_message_info(parent=window, title="Success!", message="Master password set!")
+                return True
+            else:
+                return False

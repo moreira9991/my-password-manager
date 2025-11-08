@@ -1,8 +1,7 @@
-from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox,Toplevel, Frame, StringVar, Scrollbar,ttk
+from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox,Toplevel, Frame, StringVar, Scrollbar
 from pathlib import Path
 from app.service import generate_password, normalize_site, custom_message_askokcancel, custom_message_info, toggle_password, AccountService, add_password_msg, edit_password_msg, master_password_msg
 from app.store_json import JsonStore
-from zxcvbn import zxcvbn
 
 ## CHECKING CODE --> REFACTORING
 class AppGUI:
@@ -77,7 +76,7 @@ class AppGUI:
         self.pass_inpt.delete(0, END)
         self.pass_inpt.insert(0, password)
 
-## ---> ALL GOOD
+## ---> NEED TO REFACTOR
 
     #Adds account to JSON -> encripted DB soon
     def on_add(self) -> None:
@@ -91,7 +90,6 @@ class AppGUI:
             custom_message_info(self.root,title="Error!",message="Please don't leave any fields empty.")
             return
         
-## ---> ALL GOOD
 
         # Checking for duplicate username
         checking_username = self.data.get(key)
@@ -120,6 +118,8 @@ class AppGUI:
             self.user_inpt.delete(0, END)
             self.pass_inpt.delete(0, END)
             self.web_inpt.focus_set()
+
+    ## ---> NEED TO REFACTOR
  
     def on_cls(self)-> None:
         MyPasswords(self.root)
@@ -220,7 +220,7 @@ class MyPasswords:
         self.root1.config(padx=10,pady=10)
         self.root1.geometry("1580x1000")
         self.root1.resizable(False,False)
-
+  
         self.root1.grid_rowconfigure(0,weight=0)
         self.root1.grid_rowconfigure(1,weight=1)
         self.root1.grid_columnconfigure(0,weight=1)
@@ -346,7 +346,6 @@ class MyPasswords:
         # possible to coppy info from the accounts
         self.disable_btns(on_off=True)
 
-        #Comporta se como dialogo do parent, para continuar é preciso fechar
         self.root3.transient(self.root1) 
 
         Label(self.root3, text="Site", font=("Arial",10,"bold")).grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
@@ -373,91 +372,43 @@ class MyPasswords:
         if (not self.site.strip()) or (not self.user.strip()):
             custom_message_info(parent=self.root3, title="Error!", message="Please don't leave any fields empty.")
             return
-        
-        self.entry= self.data.get(key)
-        if self.entry:
-            a=0
-            for acc in self.entry:
-                if self.user == acc["username"]:
-                    password= acc["password"]
-                    a=1
-            if a==0:
+
+        #checks if there is data saved for site
+        if self.data.get(key):
+            data = self.service.find(site=self.site,username=self.user)
+            if data:
+                password= data["password"]
+            else:
                 custom_message_info(parent=self.root3, title="Error!", message=f"Username/Email provided is not saved for {key.capitalize()}")
                 return
-            else:
-                self.manage_search_btn.config(state="disabled")
-                Label(self.root3, text="Password", font=("Arial",10,"bold")).grid(column=0, row= 2 ,sticky="w",padx=10,pady=5)
-                self.pwd_entry=Entry(self.root3,width=30)
-                self.pwd_entry.grid(column=1,row=2)
-                self.pwd_entry.insert(0,f"{password}")
 
-                delete_btn=Button(self.root3, text="Delete",command=lambda:self.on_delete(site=self.site,username=self.user))
-                delete_btn.grid(column=2,row=2,sticky="WE")
+            self.manage_search_btn.config(state="disabled")
+            Label(self.root3, text="Password", font=("Arial",10,"bold")).grid(column=0, row= 2 ,sticky="w",padx=10,pady=5)
+            self.pwd_entry=Entry(self.root3,width=30)
+            self.pwd_entry.grid(column=1,row=2)
+            self.pwd_entry.insert(0,f"{password}")
 
-                edit_btn=Button(self.root3,text="Edit",command=lambda:self.on_edit())
-                edit_btn.grid(column=2,row=1,sticky="WE")
+            delete_btn=Button(self.root3, text="Delete",command=lambda:self.on_delete(site=self.site,username=self.user))
+            delete_btn.grid(column=2,row=2,sticky="WE")
+
+            edit_btn=Button(self.root3,text="Edit",command=lambda:self.on_edit())
+            edit_btn.grid(column=2,row=1,sticky="WE")
         else:
             custom_message_info(parent=self.root3,title="Error!",message=f"No data found for {key.capitalize()}")
 
 
     def on_edit(self):
-        ## --> refactor here1
-        #result=zxcvbn(self.pwd_entry.get())
-        a=0
-        for acc in self.entry:
-            if (self.user_inpt.get()== acc["username"]) and (self.user_inpt.get()!=self.user):
-                a+=1
+        self.service.edit(main_window=self.root1,
+                          window=self.root3,
+                          site=self.site,
+                          username=self.user,
+                          new_username=self.user_inpt.get(),
+                          new_password=self.pwd_entry.get()
+                          )
 
-        if a ==1:
-            custom_message_info(
-                        parent=self.root3,
-                        title="Error!",
-                        message=(f"This account already exits for {self.site.capitalize()}."),
-                        )
-            return
-        
-        for acc in self.entry:
-            if self.user == acc["username"]:
-                #Checking if there are any changes
-                if (self.user_inpt.get() == acc["username"]) and (self.pwd_entry.get()==acc["password"]):
-                    custom_message_info(
-                        parent=self.root3,
-                        title="Error!",
-                        message=(f"No changes detected."),
-                        )
-                    return
-                
-                if not edit_password_msg(parent=self.root3,site=self.site,pwd=self.pwd_entry.get(),user=self.user_inpt.get()):    
-            
-                    return  
-                else:
-                    acc["username"]= self.user_inpt.get()
-                    acc["password"]= self.pwd_entry.get()
-                    self.store.save(self.data)
-
-                    custom_message_info(parent=self.root3,title="Success!", message=f"You edited {self.user_inpt.get()} account data for {self.site.capitalize()}")
-                    self.root3.destroy()
-                    self.root1.destroy()
-                    break
-            ## --> refactor here1
-
-    def on_delete(self,site,username):
-        confirm=custom_message_askokcancel(
-            parent=self.root3,
-            title=f"Deleting data for {self.site.capitalize()}",
-            message=(
-                f"Username/Email: {self.user}\nPassword: {self.pwd_entry.get()}\n\n"
-                f"Press 'OK' to delete data or press 'Cancel'."
-                )
-        )
-        if not confirm:
-            return
-        
-        self.service.delete(site,username)
-        custom_message_info(parent=self.root3,title="Success!",message=f"You have deleted {username} account data.")
-        # here we can instead of closing the window, dinamically update the pasword list view
-        self.root3.destroy()
-        self.root1.destroy()
+## -> Deletes account data
+    def on_delete(self,site,username): 
+        self.service.delete(main_window=self.root1,window=self.root3,site=site,username=username,pwd=self.pwd_entry.get())
 
 
     def on_manage_mpwd(self):
@@ -544,46 +495,19 @@ class MyPasswords:
             custom_message_info(parent=self.root4, title="Error!",message="Provide the correct password to continue.")
             return
         
-## -->  NEED TO REFACTOR HERE
+
     def on_edit_mpw(self)->None:
-        mpswd=self._mpwd_inpt.get()
-        key="__MASTERPASSWORD"
-
-        ## --> refactor here
-
-        if mpswd == "":
-            custom_message_info(
-                parent=self.root5,title="Error!",
-                message="To continue, set a new master password."
-                )
-        
-        elif mpswd != self.confirm_mpwd_inpt.get():
-            custom_message_info(
-                parent=self.root5,title="Error!",
-                message="The passwords don't match. Please verify and try again."
-                )
-
-        elif mpswd == self.data[key]["password"]:
-            custom_message_info(
-                parent=self.root5,
-                title="Error!",
-                message="No changes detected."
-            )
-
-            ## --> refactor here
-        
+        if self.service.master_pwd_set(
+            main_window=self.root1,
+            window=self.root5,
+            master_pwd=self._mpwd_inpt.get(),
+            confirm_m_pwd=self.confirm_mpwd_inpt.get()
+            ):
+            self.root5.destroy()
+            self.root1.destroy()
         else:
-            if master_password_msg(parent=self.root5,pwd=mpswd):
-                self.data[key]={"password":mpswd}
-                self.store.save(self.data)
-                custom_message_info(parent=self.root5, title="Success!", message="Master password set!")
-                self.root5.destroy()
-                self.root1.destroy()
-            else:
-                return
-            
-## --> NEED TO REFACTOR HERE
-  
+            return
+
 
 class MasterGUI:
     def __init__(self, root: Tk)-> None:
@@ -593,6 +517,7 @@ class MasterGUI:
         self.root.resizable(False,False)
 
         self.store =JsonStore(Path("Passwords_data.json"))
+        self.service= AccountService(self.store)
         self.data = self.store.load()
         self.result = False
         self._show_state = {"visible":False}
@@ -657,30 +582,37 @@ class MasterGUI:
             self.pass_inpt.focus()
 
     def on_set(self)->None:
-        mpswd=self.pass_inpt.get()
-
-        ## --> refactor here
-
-        if mpswd !=self.conf_pass_inpt.get():
-            custom_message_info(parent=self.root,title="Error!",message="The passwords do not match. Please verify and try again.")
-            return
-        elif mpswd == "":
-            custom_message_info(parent=self.root,title="Error!",message="You have to set a master password to continue.")
-            return
-        
-        ## --> refactor here
-
-        if master_password_msg(parent=self.root,pwd=mpswd):
-            ## --> refactor here
-            key="__MASTERPASSWORD"
-            self.data[key]={"password":mpswd}
-            self.store.save(self.data)
-            ## --> refactor here
-            custom_message_info(parent=self.root, title="Success!", message="Master password set!")
+        #testando. Se der para retornar True, destroy janelas e poem result=True, caso contrario faz return
+        if self.service.master_pwd_set(window=self.root,master_pwd=self.pass_inpt.get(),confirm_m_pwd=self.conf_pass_inpt.get):
             self.result=True
             self.root.destroy()
-        else:
-            return
+        # else:
+        #     return
+
+        # mpswd=self.pass_inpt.get()
+
+        # ## --> refactor here
+
+        # if mpswd !=self.conf_pass_inpt.get():
+        #     custom_message_info(parent=self.root,title="Error!",message="The passwords do not match. Please verify and try again.")
+        #     return
+        # elif mpswd == "":
+        #     custom_message_info(parent=self.root,title="Error!",message="You have to set a master password to continue.")
+        #     return
+        
+        # ## --> refactor here
+
+        # if master_password_msg(parent=self.root,pwd=mpswd):
+        #     ## --> refactor here
+        #     key="__MASTERPASSWORD"
+        #     self.data[key]={"password":mpswd}
+        #     self.store.save(self.data)
+        #     ## --> refactor here
+        #     custom_message_info(parent=self.root, title="Success!", message="Master password set!")
+        #     self.result=True
+        #     self.root.destroy()
+        # else:
+        #     return
 
 
     def on_verify(self)->None:

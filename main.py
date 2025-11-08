@@ -65,10 +65,12 @@ if  mpawd== True:
 #   Criar uma class para os dialogos - DONE - 150 linhas -> ~900 linhas
 # Resolver bug de editar acc
 # Correção de .grid()
+# -690 LINHAS
+# As mensagens ao pedir para confirmar as passwords, devem apresentar las primeiramente escondidas ("*"), e ser possível mostrar las com botao toggle
 # 
 
 # Bug found! When editing an account, erasing the password and pressing edit doesnt do nothing. It should show
-#   error not leave any field empty. Do that for both password and username check
+#   error not leave any field empty. Do that for both password and username check -
 # Comentar código em ingles
 # Arranjar maneira de fazer backup do ficheiro encryptado para email.
 #   No canto inferior direito da janela "My Password's", ter um botao que,
