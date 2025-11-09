@@ -3,7 +3,6 @@ from pathlib import Path
 from app.service import generate_password, normalize_site, custom_message_askokcancel, custom_message_info, toggle_password, AccountService, add_password_msg, edit_password_msg, master_password_msg
 from app.store_json import JsonStore
 
-## CHECKING CODE --> REFACTORING
 class AppGUI:
     def __init__(self, root: Tk)-> None:
         self.root = root
@@ -17,6 +16,7 @@ class AppGUI:
 
         #Store/data
         self.store =JsonStore(Path("Passwords_data.json"))
+        self.service= AccountService(self.store)
         self.data = self.store.load()
 
         self.canvas = Canvas (width=1000, height=340,highlightthickness=0)
@@ -68,7 +68,6 @@ class AppGUI:
         #Focous will start on the web entry box
         self.web_inpt.focus()
 
-
     # Generates a lvl4 password
     def on_generate(self) -> None:
         password = generate_password()
@@ -76,50 +75,16 @@ class AppGUI:
         self.pass_inpt.delete(0, END)
         self.pass_inpt.insert(0, password)
 
-## ---> NEED TO REFACTOR
 
     #Adds account to JSON -> encripted DB soon
     def on_add(self) -> None:
-        site = self.web_inpt.get()
-        username = self.user_inpt.get()
-        pwd = self.pass_inpt.get()
-        key = normalize_site(site)
-
-        # checks if entrys are empty
-        if not site.strip() or not username.strip() or not pwd.strip():
-            custom_message_info(self.root,title="Error!",message="Please don't leave any fields empty.")
-            return
-        
-
-        # Checking for duplicate username
-        checking_username = self.data.get(key)
-        if checking_username:
-            for acc in checking_username:
-                if username == acc["username"]:
-                    custom_message_info(parent=self.root,title="Error!",message=f"{username} account allready saved for {site.capitalize()}!")
-                    return
-        #Checks for password strength
-        if not add_password_msg(parent=self.root, site=site, pwd=pwd, user=username):
-            return
-        
-        if key not in self.data:
-            self.data[key]=[]
-            
-        self.data[key].append({"username": username, "password": pwd})
-        try:
-            self.store.save(self.data)
-            custom_message_info(parent=self.root,title="Success",message=f"{site.capitalize()} account saved.")
-        except Exception as e:
-            messagebox.showerror("Error", f"Failed to save data: {e}")
-            return
-        finally:
+        if self.service.add(window=self.root,site=self.web_inpt.get(),username=self.user_inpt.get(),password=self.pass_inpt.get()):
             # Reset fields (keep focus on website for next entry)
             self.web_inpt.delete(0, END)
             self.user_inpt.delete(0, END)
             self.pass_inpt.delete(0, END)
             self.web_inpt.focus_set()
 
-    ## ---> NEED TO REFACTOR
  
     def on_cls(self)-> None:
         MyPasswords(self.root)
@@ -586,33 +551,6 @@ class MasterGUI:
         if self.service.master_pwd_set(window=self.root,master_pwd=self.pass_inpt.get(),confirm_m_pwd=self.conf_pass_inpt.get):
             self.result=True
             self.root.destroy()
-        # else:
-        #     return
-
-        # mpswd=self.pass_inpt.get()
-
-        # ## --> refactor here
-
-        # if mpswd !=self.conf_pass_inpt.get():
-        #     custom_message_info(parent=self.root,title="Error!",message="The passwords do not match. Please verify and try again.")
-        #     return
-        # elif mpswd == "":
-        #     custom_message_info(parent=self.root,title="Error!",message="You have to set a master password to continue.")
-        #     return
-        
-        # ## --> refactor here
-
-        # if master_password_msg(parent=self.root,pwd=mpswd):
-        #     ## --> refactor here
-        #     key="__MASTERPASSWORD"
-        #     self.data[key]={"password":mpswd}
-        #     self.store.save(self.data)
-        #     ## --> refactor here
-        #     custom_message_info(parent=self.root, title="Success!", message="Master password set!")
-        #     self.result=True
-        #     self.root.destroy()
-        # else:
-        #     return
 
 
     def on_verify(self)->None:
