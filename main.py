@@ -57,8 +57,6 @@ if  mpawd== True:
 # Bug FOUND in manage passwords! When pressing search and either there 
 #   is no saved data for the search or entrys are empty, the search
 #   btn becomes disabled, becouse on the next stage it has to become disabled. - FIXED
-# Migrar para SQLite + SQLcipher-
-# Logo mais original -
 
 # --- Working 
 # Organizar/refactor código - Inicio 1050 linhas
@@ -68,9 +66,19 @@ if  mpawd== True:
 # -690 LINHAS
 # As mensagens ao pedir para confirmar as passwords, devem apresentar las primeiramente escondidas ("*"), e ser possível mostrar las com botao toggle
 # 
+# Logo mais original -
+# Alterar os binds dos enters para ser sempre possivel dar enter a uma nova entrada
+# Verificar as custom messages, e decedir: Ou tirar a password ao confirmar, ou mostrar-la escondida com o botão para mostrar. Penso que tirar
+#   a password fica mais clean.
+# TODAS as passwords tem de aparecer inicialmente escondidas. Na My passwords, arranjar forma de ao clicar sobre palavra escondida, mostrar a passe e reverter
+# Ao filtrar fazer algo parecido com o de cima
+# Ao fazer manage a passwords tambem aparecer escondida com um botao toggle show
 
+
+
+# Migrar para SQLite + SQLcipher-
 # Bug found! When editing an account, erasing the password and pressing edit doesnt do nothing. It should show
-#   error not leave any field empty. Do that for both password and username check -
+#   error not leave any field empty. Do that for both password and username check - done
 # Comentar código em ingles
 # Arranjar maneira de fazer backup do ficheiro encryptado para email.
 #   No canto inferior direito da janela "My Password's", ter um botao que,

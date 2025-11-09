@@ -171,15 +171,37 @@ class AccountService:
                 return True
 
         
-
-    def add(self, site:str, username:str, password: str):
+    def add(self,window:Tk, site:str, username:str, password: str):
         key = normalize_site(site)
-        self.data.setdefault(key,[])
-        if any (a["username"]==username for a in self.data[key]):
-            raise ValueError("Account already exists for this site/username.")
-        self.data[key].append({"username":username,"password":password})
-        self.store.save(self.data)
+        #checks for empty entries
+        if not site.strip() or not username.strip() or not password.strip():
+            custom_message_info(parent=window,title="Error!",message="Please don't leave any fields empty.")
+            return False
 
+        #Checking for duplicate username for same plataform
+        check_user=self.data.get(key)
+        if check_user:
+            for acc in check_user:
+                if username ==acc["username"]:
+                    custom_message_info(parent=window,title="Error",message=f"{username} account allready saved for {site.capitalize()}!")
+                    return False
+                
+        #Checks for password strenght
+        if not add_password_msg(parent=window,site=site,pwd=password,user=username):
+            return False
+        if key not in self.data:
+            self.data[key]=[]
+        
+        self.data[key].append({"username":username,"password":password})
+        try:
+            self.store.save(self.data)
+            custom_message_info(parent=window,title="Success!",message=f"{site.capitalize()} account saved.")
+        except Exception as e:
+            custom_message_info(parent=window,title="Error",message= f"Failed to save data: {e}")
+            return False
+        finally:
+            return True
+        
 
 # done
 # edits accounts, before checking and blocking for unwanted interactions
@@ -246,7 +268,7 @@ class AccountService:
         else:
             return
         
-
+#done
     def master_pwd_set (self,main_window:Tk,window:Tk,master_pwd:str,confirm_m_pwd):
         key ="__MASTERPASSWORD"
         if not master_pwd.strip():
