@@ -1,6 +1,6 @@
 from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox,Toplevel, Frame, StringVar, Scrollbar
 from pathlib import Path
-from app.service import generate_password, normalize_site, custom_message_askokcancel, custom_message_info, toggle_password, AccountService, add_password_msg, edit_password_msg, master_password_msg
+from app.service import generate_password, normalize_site, custom_message_info, toggle_password, AccountService, add_password_msg, edit_password_msg, master_password_msg
 from app.store_json import JsonStore
 
 class AppGUI:

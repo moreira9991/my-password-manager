@@ -96,23 +96,23 @@ def custom_message_askokcancel(parent:Tk, title, message)-> bool:
 def password_strength_score(score: int) -> str:
     return ["very weak","weak","okay","strong","very strong"][score]
 
-def add_password_msg(parent:Tk,site:str,pwd:str,user:str):
+def add_password_msg(parent:Tk,site:str,pwd:str):
     result = zxcvbn(pwd)["score"]
     msg=password_strength_score(result)
     return custom_message_askokcancel(parent=parent, title=site.capitalize(),message=(
                     f"This password is {msg}!\n\n"
-                    f"Email/Username: {user}\nPassword: {pwd}\n\n"
-                    "Press 'OK' to save data or press 'Cancel' to edit data.")
+                    f"Saving account...\n\n"
+                    "Press 'OK' to continue or 'Cancel'.")
             )
 
 
-def edit_password_msg(parent:Tk,site:str,pwd:str,user:str):
+def edit_password_msg(parent:Tk,site:str,pwd:str):
     result = zxcvbn(pwd)["score"]
     msg=password_strength_score(result)
     return custom_message_askokcancel(parent=parent, title=f"Editing data for {site.capitalize()}",message=(
                     f"This password is {msg}!\n\n"
-                    f"Email/Username: {user}\nPassword: {pwd}\n\n"
-                    "Press 'OK' to save data or press 'Cancel' to edit data.")
+                    f"Saving account...\n\n" 
+                    "Press 'OK' to continue or 'Cancel'.")
             )
 
 
@@ -124,8 +124,8 @@ def master_password_msg(parent:Tk,pwd:str):
     msg=password_strength_score(result)
     return custom_message_askokcancel(parent=parent, title=f"Confirm master password.",message=(
                     f"This password is {msg}!\n\n"
-                    f"Set {pwd} as master password?\n\n"
-                    "Press 'OK' to continue or press 'Cancel'.")
+                    f"Saving master password...\n\n"
+                    "Press 'OK' to continue or 'Cancel'.")
     )
              
 
@@ -144,7 +144,7 @@ class AccountService:
         self.store = store
         self.data= self.store.load()
 
-
+# not used 
     def list_all(self):
         for site, accounts in self.data.items():
             if site =="__MASTERPASSWORD":
@@ -170,7 +170,7 @@ class AccountService:
             if (username_inpt== acc["username"]) and (username_inpt!=check_user):
                 return True
 
-        
+#done
     def add(self,window:Tk, site:str, username:str, password: str):
         key = normalize_site(site)
         #checks for empty entries
@@ -187,7 +187,7 @@ class AccountService:
                     return False
                 
         #Checks for password strenght
-        if not add_password_msg(parent=window,site=site,pwd=password,user=username):
+        if not add_password_msg(parent=window,site=site,pwd=password):
             return False
         if key not in self.data:
             self.data[key]=[]
@@ -233,12 +233,12 @@ class AccountService:
                     return
                 
                 #confirm change
-                if edit_password_msg(parent=window,site=site,pwd=new_password,user=new_username):
+                if edit_password_msg(parent=window,site=site,pwd=new_password):
                     acc["username"]= new_username
                     acc["password"]= new_password
                     self.store.save(self.data)
 
-                    custom_message_info(parent=window,title="Success!", message=f"You edited {new_username} account data for {site.capitalize()}")
+                    custom_message_info(parent=window,title="Success!", message=f"{site.capitalize()} account saved.")
                     window.destroy()
                     main_window.destroy()
                     break
@@ -251,7 +251,7 @@ class AccountService:
         if custom_message_askokcancel(
             parent=window,
             title=f"Deleting data for {site.capitalize()}",
-            message=f"Username/Email: {username}\nPassword:{pwd}\n\nPress 'OK' to delete data or press 'Cancel'."
+            message=f"Press 'OK' to continue or press 'Cancel'."
             ):
             key = normalize_site(site)
             arr = self.data.get(key,[])
@@ -262,7 +262,7 @@ class AccountService:
                         self.data.pop(key,None)
                     self.store.save(self.data)
             
-            custom_message_info(parent=window,title="Success!",message=f"You have deleted {username} account data.")
+            custom_message_info(parent=window,title="Success!",message=f"{site.capitalize()} account deleted.")
             window.destroy()
             main_window.destroy()
         else:
