@@ -134,10 +134,12 @@ def toggle_password(btn:Button,ent:Entry,state:dict):
     state["visible"] = not state["visible"]
     if state["visible"]:
         ent.config(show="")
-        btn.config(text="Hide")
+        if btn:
+            btn.config(text="Hide")
     else:
         ent.config(show="*")
-        btn.config(text="Show")  
+        if btn:
+            btn.config(text="Show")  
 
 class AccountService:
     def __init__(self, store: JsonStore):

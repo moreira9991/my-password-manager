@@ -58,24 +58,26 @@ if  mpawd== True:
 #   is no saved data for the search or entrys are empty, the search
 #   btn becomes disabled, becouse on the next stage it has to become disabled. - FIXED
 
-# --- Working 
+# --- DONE for NOW started with 1100lines, now less than 600
 # Organizar/refactor código - Inicio 1050 linhas
-#   Criar uma class para os dialogos - DONE - 150 linhas -> ~900 linhas
-# Resolver bug de editar acc
-# Correção de .grid()
-# -690 LINHAS
-# As mensagens ao pedir para confirmar as passwords, devem apresentar las primeiramente escondidas ("*"), e ser possível mostrar las com botao toggle
+#   Criar uma class para os dialogos - DONE 
+# Separar front e back
+# Resolver bug de editar acc - DONE
+# -- Verificar as custom messages, e decedir: Ou tirar a password ao confirmar, 
+#       ou mostrar-la escondida com o botão para mostrar. Penso que tirar
+#       a password fica mais clean. - DONE
 # 
+#WORKING HERE
+#-- Update ALL PASSWORDS must appear hidden.
+#       - My password list shows all passwords hidden. Create an interaction to unhidden a password. perhaps doubleclicking the pass? - DONE
+#       - Filtering plataforms also shows all hiden and perhaps create a similar interaction like the complete password list - DONE
+#       - Managing spesific acc should also have the pass hidden, and perhaps add a toggle button, wich i dont like, since the - DONE
+#           window is allready well distribuited
+#WORKING HERE
+#
 # Logo mais original -
 # Alterar os binds dos enters para ser sempre possivel dar enter a uma nova entrada
-# Verificar as custom messages, e decedir: Ou tirar a password ao confirmar, ou mostrar-la escondida com o botão para mostrar. Penso que tirar
-#   a password fica mais clean.
-# TODAS as passwords tem de aparecer inicialmente escondidas. Na My passwords, arranjar forma de ao clicar sobre palavra escondida, mostrar a passe e reverter
-# Ao filtrar fazer algo parecido com o de cima
-# Ao fazer manage a passwords tambem aparecer escondida com um botao toggle show
-
-
-
+# Bugg ao dar scroll para alem do limite inferior e superior, 
 # Migrar para SQLite + SQLcipher-
 # Bug found! When editing an account, erasing the password and pressing edit doesnt do nothing. It should show
 #   error not leave any field empty. Do that for both password and username check - done

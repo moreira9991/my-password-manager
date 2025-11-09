@@ -137,6 +137,7 @@ class PasswordListView:
             canvas.bind_all("<MouseWheel>", lambda e: move(-1 if e.delta > 0 else +1), add="+")
 
     def render(self, data: dict):
+        state ={"visible":False}
         #Renderiza as linhas a partir de um dicionário de sites e contas."""
         # Limpa linhas antigas
         for r in self.rows:
@@ -164,7 +165,12 @@ class PasswordListView:
                 user_ent = Entry(self.inner_frame, textvariable=user_var, state="readonly",
                                  relief="flat", readonlybackground=bg, fg="black", width=25)
                 pass_ent = Entry(self.inner_frame, textvariable=pass_var, state="readonly",
-                                 relief="flat", readonlybackground=bg, fg="black", width=20)
+                                 relief="flat", readonlybackground=bg, fg="black", width=20,show="*")
+
+
+                #teste
+                #liga o duplo clique ao toggle_pass
+                pass_ent.bind("<Double-Button-1>",lambda w, ent=pass_ent, st=state: toggle_password(None,ent,st))
 
                 site_ent.grid(column=0, row=cnt, sticky="w", padx=10, pady=5)
                 user_ent.grid(column=1, row=cnt, sticky="w", padx=10, pady=5)
@@ -246,6 +252,7 @@ class MyPasswords:
             Label(root2, text="Password", font=("Arial",10,"bold")).grid(column=1, row= 0 ,sticky="w",padx=10,pady=5)
             root2.transient(self.root1) 
             root2.grab_set()
+            state={"visible":False}
 
             cnt=1
             for acc in entry:
@@ -272,8 +279,12 @@ class MyPasswords:
                                  readonlybackground=self.bg,
                                  fg="black",
                                  exportselection=1,
-                                 width=25)
+                                 width=25,show="*")
                 pass_entry.grid(column=1,row=cnt,sticky="w",padx=10,pady=5)
+
+                                #teste
+                #liga o duplo clique ao toggle_pass
+                pass_entry.bind("<Double-Button-1>",lambda w, ent=pass_entry, st=state: toggle_password(None,ent,st))
 
                 cnt+=1
         else:
@@ -334,6 +345,7 @@ class MyPasswords:
         self.site = self.site_inpt.get()
         self.user = self.user_inpt.get()
         key = normalize_site(self.site)
+        state={"visible":False}
         if (not self.site.strip()) or (not self.user.strip()):
             custom_message_info(parent=self.root3, title="Error!", message="Please don't leave any fields empty.")
             return
@@ -349,7 +361,7 @@ class MyPasswords:
 
             self.manage_search_btn.config(state="disabled")
             Label(self.root3, text="Password", font=("Arial",10,"bold")).grid(column=0, row= 2 ,sticky="w",padx=10,pady=5)
-            self.pwd_entry=Entry(self.root3,width=30)
+            self.pwd_entry=Entry(self.root3,width=30,show="*")
             self.pwd_entry.grid(column=1,row=2)
             self.pwd_entry.insert(0,f"{password}")
 
@@ -358,6 +370,11 @@ class MyPasswords:
 
             edit_btn=Button(self.root3,text="Edit",command=lambda:self.on_edit())
             edit_btn.grid(column=2,row=1,sticky="WE")
+
+                        #teste
+
+            #liga o duplo clique ao toggle_pass
+            self.pwd_entry.bind("<Double-Button-1>",lambda w, ent=self.pwd_entry, st=state: toggle_password(None,ent,st))
         else:
             custom_message_info(parent=self.root3,title="Error!",message=f"No data found for {key.capitalize()}")
 
