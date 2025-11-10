@@ -30,6 +30,8 @@ def custom_message_info(parent:Tk, title, message):
     win.resizable(False,False)
     win.attributes("-topmost",True)
     win.transient(parent)
+    
+    win.bind("<Return>", lambda e:btn.invoke())
 
     parent.update_idletasks()
     x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
@@ -58,6 +60,9 @@ def custom_message_askokcancel(parent:Tk, title, message)-> bool:
     win.resizable(False,False)
     win.attributes("-topmost",True)
     win.transient(parent)
+
+    win.bind("<Return>", lambda e:ok_btn.invoke())
+    win.bind("<KP_Enter>", lambda e:ok_btn.invoke())
 
     parent.update_idletasks()
     x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
