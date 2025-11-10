@@ -47,13 +47,18 @@ if  mpawd== True:
 # Tirar a opção de redimensionar e full screen de maior parte das janelas, as que nao fazem sentido pelo menos - DONE
 # Dimensionar janela de mypasswords para tamanho fixo e scroll nas passwords - DONE
 # Ao editar passwords ou master passwords, aparecer mensagem de erro se nada for alterado - DONE
+#
 # When editing passwords, block if the username is allready in user for that plataform. It should not be possible to have 2 acc for the
 #   same plataform - DONE
+#
 # Add more and stronger requirements for creating a password or master password - DONE
 #   When creating master password, type twice - DONE
 #   toggle visibility button fix size - DONE
+#
 # Show password strength when confirming - DONE
+#
 # Nao deixar criar conta para mesmo site e mesmo username - DONE
+#
 # Bug FOUND in manage passwords! When pressing search and either there 
 #   is no saved data for the search or entrys are empty, the search
 #   btn becomes disabled, becouse on the next stage it has to become disabled. - FIXED
@@ -63,21 +68,25 @@ if  mpawd== True:
 #   Criar uma class para os dialogos - DONE 
 # Separar front e back
 # Resolver bug de editar acc - DONE
+#
 # -- Verificar as custom messages, e decedir: Ou tirar a password ao confirmar, 
 #       ou mostrar-la escondida com o botão para mostrar. Penso que tirar
 #       a password fica mais clean. - DONE
 # 
-#WORKING HERE
 #-- Update ALL PASSWORDS must appear hidden.
 #       - My password list shows all passwords hidden. Create an interaction to unhidden a password. perhaps doubleclicking the pass? - DONE
 #       - Filtering plataforms also shows all hiden and perhaps create a similar interaction like the complete password list - DONE
 #       - Managing spesific acc should also have the pass hidden, and perhaps add a toggle button, wich i dont like, since the - DONE
 #           window is allready well distribuited
-#WORKING HERE
+#
+##WORKING HERE
+# -- Dar binds ao enter para as custom info e custom ask ok/cancel - DONE
+# -- Bugg ao dar scroll para alem do limite inferior e superior
+#       Parece que o bugg so aparece na segunda vez ao abrir a janela "My passwords"
+#       Melhorar smoothness do scroll, esta muito empancado e bugga se mexer os dedos muito lento 
+##WORKING HERE
 #
 # Logo mais original -
-# Alterar os binds dos enters para ser sempre possivel dar enter a uma nova entrada
-# Bugg ao dar scroll para alem do limite inferior e superior, 
 # Migrar para SQLite + SQLcipher-
 # Bug found! When editing an account, erasing the password and pressing edit doesnt do nothing. It should show
 #   error not leave any field empty. Do that for both password and username check - done
