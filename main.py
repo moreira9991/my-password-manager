@@ -79,15 +79,17 @@ if  mpawd== True:
 #       - Managing spesific acc should also have the pass hidden, and perhaps add a toggle button, wich i dont like, since the - DONE
 #           window is allready well distribuited
 #
-##WORKING HERE
 # -- Dar binds ao enter para as custom info e custom ask ok/cancel - DONE
+#
+##WORKING HERE
 # -- Bugg ao dar scroll para alem do limite inferior e superior
-#       Parece que o bugg so aparece na segunda vez ao abrir a janela "My passwords"
+#       Parece que o bugg so aparece na segunda vez ao abrir a janela "My passwords" - DONE
 #       Melhorar smoothness do scroll, esta muito empancado e bugga se mexer os dedos muito lento 
 ##WORKING HERE
 #
 # Logo mais original -
-# Migrar para SQLite + SQLcipher-
+# Bind ESC to closing windows, exept main window ? perhaps if esc on main window, ask if wants to close ? think about this but dont put to much into it, need to advance
+# Migrar para SQLite + SQLcipher- NO - JSON ENCRYPTED FILE  
 # Bug found! When editing an account, erasing the password and pressing edit doesnt do nothing. It should show
 #   error not leave any field empty. Do that for both password and username check - done
 # Comentar código em ingles
