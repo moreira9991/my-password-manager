@@ -121,20 +121,56 @@ class PasswordListView:
     def _on_canvas_configure(self, event):
         self.canvas.itemconfigure(self.window_id, width=self.canvas.winfo_width())
 
+
+#TESTING HERE
     def _smooth_scroll(self, canvas:Canvas, step=0.008):
-        def clamp(x, lo=0.0, hi=1.0): return max(lo, min(hi, x))
-        def move(sign):
-            first, _ = canvas.yview()
-            canvas.yview_moveto(clamp(first + sign * step))
+        def clamp(x, lo=0.0, hi=1.0):
+            return max(lo, min(hi, x))
+        
+        def move(sign: int):
+            try:
+                if not canvas.winfo_exists():
+                    return
+                first, _ = canvas.yview()
+                canvas.yview_moveto(clamp(first + sign * step))
+            except Exception:
+                return
+        if getattr(canvas,"_smooth_scroll_bound",False):
+            return
+                
 
         system = str(canvas.tk.call('tk', 'windowingsystem'))
         if system == "x11":
             canvas.bind_all("<Button-4>", lambda e: move(-1), add="+")
             canvas.bind_all("<Button-5>", lambda e: move(+1), add="+")
-        elif system == "aqua":
-            canvas.bind_all("<MouseWheel>", lambda e: move(-1 if e.delta > 0 else +1), add="+")
         else:
             canvas.bind_all("<MouseWheel>", lambda e: move(-1 if e.delta > 0 else +1), add="+")
+
+        def _cleanup(_evt=None):
+            try:
+                canvas.unbind("<Button-4>")
+                canvas.unbind("<Button-5>")
+                canvas.unbind("<MouseWheel>")
+            except Exception:
+                pass
+            finally:
+                try:
+                    canvas._smooth_scroll_bound= False
+                except Exception:
+                    pass
+            canvas.bind("<Destroy>",_cleanup,add="+")
+
+            canvas._smooth_scroll_bound=True
+
+
+
+
+
+
+
+
+
+#TESTING HERE
 
     def render(self, data: dict):
         state ={"visible":False}
