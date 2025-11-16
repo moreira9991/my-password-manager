@@ -81,22 +81,26 @@ if  mpawd== True:
 #
 # -- Dar binds ao enter para as custom info e custom ask ok/cancel - DONE
 #
+# -- Bugg ao dar scroll para alem do limite inferior e superior - DONE
+#       
+#
 ##WORKING HERE
-# -- Bugg ao dar scroll para alem do limite inferior e superior
-#       Parece que o bugg so aparece na segunda vez ao abrir a janela "My passwords" - DONE
-#       Melhorar smoothness do scroll, esta muito empancado e bugga se mexer os dedos muito lento 
+# -- Melhorar smoothness do scroll, esta muito empancado e bugga se mexer os dedos muito lento 
 ##WORKING HERE
 #
 # Logo mais original -
 # Bind ESC to closing windows, exept main window ? perhaps if esc on main window, ask if wants to close ? think about this but dont put to much into it, need to advance
 # Migrar para SQLite + SQLcipher- NO - JSON ENCRYPTED FILE  
 # Bug found! When editing an account, erasing the password and pressing edit doesnt do nothing. It should show
-#   error not leave any field empty. Do that for both password and username check - done
+#   error not leave any field empty. Do that for both password and username check - DONE
+#
 # Comentar código em ingles
+#
 # Arranjar maneira de fazer backup do ficheiro encryptado para email.
 #   No canto inferior direito da janela "My Password's", ter um botao que,
 #   ao providencionar master password, pede email e envia JSON file com as passwords encriptadas,
 #   com instruções de onde o path do ficheiro deve ficar  -
+#
 # readme -
 # requirements -
 
