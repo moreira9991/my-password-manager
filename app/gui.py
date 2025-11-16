@@ -122,11 +122,10 @@ class PasswordListView:
         self.canvas.itemconfigure(self.window_id, width=self.canvas.winfo_width())
 
 
-#TESTING HERE
-    def _smooth_scroll(self, canvas:Canvas, step=0.008):
+    def _smooth_scroll(self, canvas: Canvas, step=0.008):
         def clamp(x, lo=0.0, hi=1.0):
             return max(lo, min(hi, x))
-        
+
         def move(sign: int):
             try:
                 if not canvas.winfo_exists():
@@ -135,38 +134,52 @@ class PasswordListView:
                 canvas.yview_moveto(clamp(first + sign * step))
             except Exception:
                 return
-        if getattr(canvas,"_smooth_scroll_bound",False):
-            return
-                
 
-        system = str(canvas.tk.call('tk', 'windowingsystem'))
+        # evita bind duplo
+        if getattr(canvas, "_smooth_scroll_bound", False):
+            return
+
+        system = str(canvas.tk.call("tk", "windowingsystem"))
+
         if system == "x11":
-            canvas.bind_all("<Button-4>", lambda e: move(-1), add="+")
-            canvas.bind_all("<Button-5>", lambda e: move(+1), add="+")
+            # handler comum para Button-4/5, mas a ignorar scroll horizontal (Shift)
+            def on_linux_scroll(event):
+                # we ignore diagional scrolls
+                if event.state & 0x0001:  # bit de Shift
+                    return
+
+                if event.num == 4:       # wheel up
+                    move(-1)
+                elif event.num == 5:     # wheel down
+                    move(+1)
+
+            canvas.bind_all("<Button-4>", on_linux_scroll, add="+")
+            canvas.bind_all("<Button-5>", on_linux_scroll, add="+")
         else:
-            canvas.bind_all("<MouseWheel>", lambda e: move(-1 if e.delta > 0 else +1), add="+")
+            # Windows / macOS → delta funciona bem
+            canvas.bind_all(
+                "<MouseWheel>",
+                lambda e: move(-1 if e.delta > 0 else +1),
+                add="+",
+            )
 
         def _cleanup(_evt=None):
             try:
-                canvas.unbind("<Button-4>")
-                canvas.unbind("<Button-5>")
-                canvas.unbind("<MouseWheel>")
+                # como usámos bind_all, temos de usar unbind_all
+                canvas.unbind_all("<Button-4>")
+                canvas.unbind_all("<Button-5>")
+                canvas.unbind_all("<MouseWheel>")
             except Exception:
                 pass
             finally:
                 try:
-                    canvas._smooth_scroll_bound= False
+                    canvas._smooth_scroll_bound = False
                 except Exception:
                     pass
-            canvas.bind("<Destroy>",_cleanup,add="+")
 
-            canvas._smooth_scroll_bound=True
-
-
-
-
-
-
+        # quando o canvas for destruído, limpamos os binds
+        canvas.bind("<Destroy>", _cleanup, add="+")
+        canvas._smooth_scroll_bound = True
 
 
 
