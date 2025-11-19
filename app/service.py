@@ -1,6 +1,7 @@
 from random import choice, randint, shuffle
 from tkinter import Button,Entry,Toplevel,Label,Frame,Tk
-from app.store_json import JsonStore
+from app.store_json import EncryptedStore, VaultDecryptionError
+from typing import Any
 from zxcvbn import zxcvbn
 
 def normalize_site(name: str) -> str:
@@ -123,7 +124,7 @@ def edit_password_msg(parent:Tk,site:str,pwd:str):
 
 def master_password_msg(parent:Tk,pwd:str):
     result = zxcvbn(pwd)["score"]
-    if result<3:
+    if result<4:
         custom_message_info(parent=parent,title="Error!",message="Stronger password required.")
         return
     msg=password_strength_score(result)
@@ -147,17 +148,116 @@ def toggle_password(btn:Button,ent:Entry,state:dict):
             btn.config(text="Show")  
 
 class AccountService:
-    def __init__(self, store: JsonStore):
-        self.store = store
-        self.data= self.store.load()
+    def __init__(self, store: EncryptedStore) -> None:
+        self.store= store
+        self.master_password:str  | None = None
+        self.data : dict[str,Any]={}
+        
 
-# not used 
-    def list_all(self):
-        for site, accounts in self.data.items():
-            if site =="__MASTERPASSWORD":
-                continue
-            for acc in accounts:
-                yield (site,acc["username"],acc["password"])
+
+    # Returns True if the vault file does not exists yet.
+    def is_first_run(self)-> bool:
+        return not self.store.path.exists()
+    
+    def initialize_vault(self,window:Tk, master_pwd:str,confirm_pwd:str ) -> bool:
+        if not master_pwd.strip() or not confirm_pwd.strip():
+            custom_message_info(
+                parent=window,
+                title="Error!",
+                message="Please don't leave any fields empty.",
+            )
+            return False
+
+        if master_pwd != confirm_pwd:
+            custom_message_info(
+                parent=window,
+                title="Error!",
+                message="The passwords don't match. Please verify and try again.",
+            )
+            return False
+
+        if not master_password_msg(parent=window, pwd=master_pwd):
+            return False
+
+        try:
+            # EncryptedStore.load(...) irá:
+            # - criar vault vazio se o ficheiro não existir
+            # - devolver {} nessa primeira vez
+            self.data = self.store.load(master_pwd)
+            self.master_password = master_pwd
+        except Exception as e:
+            custom_message_info(
+                parent=window,
+                title="Error!",
+                message=f"Unexpected error while creating vault:\n{e}",
+            )
+            return False
+
+        custom_message_info(parent=window, title="Success!", message="Master password set!")
+        return True
+    
+## WORKING HERE - separar em duas funcoes
+    def verify_master(self, window: Tk, master_pwd: str) -> bool:
+        """
+        Normal login: verify master password and load data into memory.
+        """
+        if not master_pwd.strip():
+            custom_message_info(
+                parent=window,
+                title="Error!",
+                message="Please provide the master password.",
+            )
+            return False
+
+        try:
+            self.data = self.store.load(master_pwd)
+            self.master_password = master_pwd
+        except VaultDecryptionError:
+            custom_message_info(
+                parent=window,
+                title="Error!",
+                message="Provide the correct password to continue.",
+            )
+            return False
+
+
+        except Exception as e:
+            custom_message_info(
+                parent=window,
+                title="Error!",
+                message=f"Unexpected error while loading vault:\n{e}",
+            )
+            return False
+
+        custom_message_info(parent=window, title="Success!", message="Welcome back!")
+        return True
+    
+    def confirm_current_master(self, window: Tk, master_pwd: str) -> bool:
+        """
+        Used inside the app (not at login) to confirm the current master password.
+
+        Does NOT reload the vault, only compares against the master already in memory.
+        """
+        if not master_pwd.strip():
+            custom_message_info(
+                parent=window,
+                title="Error!",
+                message="Please provide the master password.",
+            )
+            return False
+
+        if master_pwd != self.master_password:
+            custom_message_info(
+                parent=window,
+                title="Error!",
+                message="Provide the correct password to continue.",
+            )
+            return False
+
+        return True
+
+
+## WORKING HERE
 
 
 #done
@@ -200,8 +300,9 @@ class AccountService:
             self.data[key]=[]
         
         self.data[key].append({"username":username,"password":password})
+
         try:
-            self.store.save(self.data)
+            self.store.save(self.master_password,self.data)
             custom_message_info(parent=window,title="Success!",message=f"{site.capitalize()} account saved.")
         except Exception as e:
             custom_message_info(parent=window,title="Error",message= f"Failed to save data: {e}")
@@ -241,9 +342,18 @@ class AccountService:
                 
                 #confirm change
                 if edit_password_msg(parent=window,site=site,pwd=new_password):
+                    if self.master_password is None:
+                        custom_message_info(
+                            parent=window,
+                            title="Error",
+                            message="Internal error: master password not set.",
+                        )
+                        return False
+
+
                     acc["username"]= new_username
                     acc["password"]= new_password
-                    self.store.save(self.data)
+                    self.store.save(self.master_password,self.data)
 
                     custom_message_info(parent=window,title="Success!", message=f"{site.capitalize()} account saved.")
                     window.destroy()
@@ -267,7 +377,7 @@ class AccountService:
                     arr.pop(i)
                     if not arr: 
                         self.data.pop(key,None)
-                    self.store.save(self.data)
+                    self.store.save(self.master_password,self.data)
             
             custom_message_info(parent=window,title="Success!",message=f"{site.capitalize()} account deleted.")
             window.destroy()
@@ -277,24 +387,26 @@ class AccountService:
         
 #done
     def master_pwd_set (self,main_window:Tk,window:Tk,master_pwd:str,confirm_m_pwd):
-        key ="__MASTERPASSWORD"
         if not master_pwd.strip():
             custom_message_info(parent=window, title="Error!", message="To continue, set a new master password.")
             return
         
-        elif master_pwd != confirm_m_pwd:
+        if master_pwd != confirm_m_pwd:
             custom_message_info(parent=window,title="Error!",message="The passwords don't match. Please verify and try again.")
             return
 
-        elif master_pwd == self.data[key]["password"]:
+        if master_pwd == self.master_password:
             custom_message_info(parent=window,title="Error!",message="No changes detected.")
             return
 
-        else:
-            if master_password_msg(parent=window,pwd=master_pwd):
-                self.data[key]={"password":master_pwd}
-                self.store.save(self.data)
-                custom_message_info(parent=window, title="Success!", message="Master password set!")
-                return True
-            else:
-                return False
+        
+        if not master_password_msg(parent=window,pwd=master_pwd):
+            return False
+        
+        self.store.save(master_password=master_pwd,data=self.data)
+        self.master_password = master_pwd
+        
+        custom_message_info(parent=window, title="Success!", message="Master password set!")
+        return True
+
+            

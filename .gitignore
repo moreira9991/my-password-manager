@@ -26,8 +26,6 @@ Thumbs.db
 
 # --- Sensitive data ---
 vault.bin
-Passwords_data.json
-Passwords_data.txt
-
+vault.pmdb
 # --- Cache ---
 *.cache

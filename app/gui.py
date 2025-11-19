@@ -1,11 +1,14 @@
 from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox,Toplevel, Frame, StringVar, Scrollbar
 from pathlib import Path
-from app.service import generate_password, normalize_site, custom_message_info, toggle_password, AccountService, add_password_msg, edit_password_msg, master_password_msg
-from app.store_json import JsonStore
+from app.service import generate_password, normalize_site, custom_message_info, toggle_password, AccountService
+from app.store_json import EncryptedStore, VaultDecryptionError
 
 class AppGUI:
-    def __init__(self, root: Tk)-> None:
+    def __init__(self, root: Tk, service:AccountService)-> None:
         self.root = root
+        self.service=service
+        self.data = self.service.data
+
         self.root.title("My Password Manager")
         self.root.config(padx=20,pady=20)
         self.root.resizable(False,False)
@@ -15,9 +18,9 @@ class AppGUI:
         self.root.bind("<KP_Enter>", lambda e:self.add_btn.invoke())
 
         #Store/data
-        self.store =JsonStore(Path("Passwords_data.json"))
-        self.service= AccountService(self.store)
-        self.data = self.store.load()
+        # self.store =JsonStore(Path("Passwords_data.json"))
+        # self.service= AccountService(self.store)
+        # self.data = self.store.load()
 
         self.canvas = Canvas (width=1000, height=340,highlightthickness=0)
         logo_path = Path("assets/logo.png")
@@ -87,7 +90,7 @@ class AppGUI:
 
  
     def on_cls(self)-> None:
-        MyPasswords(self.root)
+        MyPasswords(self.root,self.service)
 
 
 class PasswordListView:
@@ -232,7 +235,7 @@ class PasswordListView:
                 cnt += 1
 
 class MyPasswords:
-    def __init__(self, root1:Tk):
+    def __init__(self, root1:Tk, service :AccountService):
         self.root1=Toplevel(root1) 
         self.root1.transient(root1)
         self.root1.grab_set() 
@@ -240,6 +243,11 @@ class MyPasswords:
         self.root1.config(padx=10,pady=10)
         self.root1.geometry("1580x1000")
         self.root1.resizable(False,False)
+
+        self.service=service
+        self.data = self.service.data
+
+        self.bg=self.root1.cget("bg")
   
         self.root1.grid_rowconfigure(0,weight=0)
         self.root1.grid_rowconfigure(1,weight=1)
@@ -247,10 +255,10 @@ class MyPasswords:
         self.root1.grid_columnconfigure(1,weight=1)
         self.root1.grid_columnconfigure(2,weight=1)
 
-        self.store =JsonStore(Path("Passwords_data.json"))
-        self.service= AccountService(self.store)
-        self.data = self.store.load()
-        self.bg=self.root1.cget("bg")
+        # self.store =JsonStore(Path("Passwords_data.json"))
+        # self.service= AccountService(self.store)
+        # self.data = self.store.load()
+        
         
         self.root1.bind("<Return>", lambda e:self.search_btn.invoke())
         self.root1.bind("<KP_Enter>", lambda e:self.search_btn.invoke())
@@ -468,8 +476,7 @@ class MyPasswords:
         
 
     def on_verify_mpwd(self)->None:
-        mpswd=self.mpwd_inpt.get()
-        if mpswd == self.data["__MASTERPASSWORD"]["password"]:
+        if self.service.confirm_current_master(window=self.root4,master_pwd=self.mpwd_inpt.get()):
             custom_message_info(parent=self.root4,title="Success!",message="Press 'OK' to continue.")
             self.root4.destroy()
 
@@ -522,9 +529,6 @@ class MyPasswords:
 
             self._mpwd_inpt.focus()
 
-        else:
-            custom_message_info(parent=self.root4, title="Error!",message="Provide the correct password to continue.")
-            return
         
 
     def on_edit_mpw(self)->None:
@@ -541,23 +545,22 @@ class MyPasswords:
 
 
 class MasterGUI:
-    def __init__(self, root: Tk)-> None:
+    def __init__(self, root: Tk, service:AccountService)-> None:
         self.root = root
+        self.service = service
         self.root.title("Provide master password to continue")
         self.root.config(padx=20,pady=20)
         self.root.resizable(False,False)
 
-        self.store =JsonStore(Path("Passwords_data.json"))
-        self.service= AccountService(self.store)
-        self.data = self.store.load()
         self.result = False
+
         self._show_state = {"visible":False}
         self._conf_show_state = {"visible":False}
 
         self.root.bind("<Return>", lambda e:self.add_btn.invoke())
         self.root.bind("<KP_Enter>", lambda e:self.add_btn.invoke())
 
-        if not "__MASTERPASSWORD" in self.data:
+        if self.service.is_first_run():
             self.pass_text = Label(text="Set a master password:")
             self.pass_text.grid(column=0, row=0)
 
@@ -614,18 +617,15 @@ class MasterGUI:
 
     def on_set(self)->None:
         #testando. Se der para retornar True, destroy janelas e poem result=True, caso contrario faz return
-        if self.service.master_pwd_set(window=self.root,master_pwd=self.pass_inpt.get(),confirm_m_pwd=self.conf_pass_inpt.get):
+        if self.service.initialize_vault(window=self.root,master_pwd=self.pass_inpt.get(),confirm_pwd=self.conf_pass_inpt.get()):
+        #if self.service.master_pwd_set(window=self.root,master_pwd=self.pass_inpt.get(),confirm_m_pwd=self.conf_pass_inpt.get()):
             self.result=True
             self.root.destroy()
 
 
     def on_verify(self)->None:
-        mpswd=self.pass_inpt.get()
-        if mpswd == self.data["__MASTERPASSWORD"]["password"]:
-            custom_message_info(parent=self.root,title="Success!",message="Welcome Back!")
+
+        if self.service.verify_master(window=self.root,master_pwd=self.pass_inpt.get()):
+            #custom_message_info(parent=self.root,title="Success!",message="Welcome Back!")
             self.result=True
             self.root.destroy()
-        else:
-            custom_message_info(parent=self.root, title="Error!",message="Provide the correct password to continue.")
-            return
-    
