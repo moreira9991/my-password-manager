@@ -1,22 +1,25 @@
 from __future__ import annotations
 from tkinter import Tk
 from app.gui import AppGUI,MasterGUI
-
-def main() -> None:
-    root = Tk()
-    AppGUI(root)
-    root.mainloop()
+from pathlib import Path
+from app.service import AccountService
+from app.store_json import EncryptedStore
 
 def mastercheck() -> None:
-    global mpawd
+    store = EncryptedStore(path=Path("vault.pmdb"))
+    service = AccountService(store)
+    
     root1= Tk()
-    tst=MasterGUI(root1)
+    tst=MasterGUI(root1,service)
     root1.mainloop()
-    mpawd=tst.result
+    if tst.result:
+        root = Tk()
+        AppGUI(root,service)
+        root.mainloop()
 
-mastercheck()
-if  mpawd== True:
-    main()
+
+if __name__=="__main__":
+    mastercheck()
 
 
 # Credenciais todas em uma janela - DONE
@@ -82,24 +85,36 @@ if  mpawd== True:
 # -- Dar binds ao enter para as custom info e custom ask ok/cancel - DONE
 #
 # -- Bugg ao dar scroll para alem do limite inferior e superior - DONE
-#       
 #
-##WORKING HERE
-# -- Melhorar smoothness do scroll, esta muito empancado e bugga se mexer os dedos muito lento 
-##WORKING HERE
+# -- Melhorar smoothness do scroll, esta muito empancado e bugga se mexer os dedos muito lento  - DONE
 #
-# Logo mais original -
-# Bind ESC to closing windows, exept main window ? perhaps if esc on main window, ask if wants to close ? think about this but dont put to much into it, need to advance
-# Migrar para SQLite + SQLcipher- NO - JSON ENCRYPTED FILE  
+# -- Logo mais original -
+#
+# -- Bind ESC to closing windows, exept main window ? perhaps if esc on main window,
+#   ask if wants to close ? think about this but dont put to much into it, need to advance -
+#
+# -- Update dinamically password list when editing or deleting accounts -
+#
+# -- Inactive for 1 minute destroys session -
+#
+# -- Organizar o codigo para subir publicamente
+#       Entender o que tudo que o chat ajudou a fazer
+#       Comentar e organizar o codigo em Ingles
+#
+#
+#
+# -- Migrate to encrypted file - DONE
+#  
 # Bug found! When editing an account, erasing the password and pressing edit doesnt do nothing. It should show
 #   error not leave any field empty. Do that for both password and username check - DONE
 #
-# Comentar código em ingles
 #
+##WORKING HERE
 # Arranjar maneira de fazer backup do ficheiro encryptado para email.
 #   No canto inferior direito da janela "My Password's", ter um botao que,
 #   ao providencionar master password, pede email e envia JSON file com as passwords encriptadas,
-#   com instruções de onde o path do ficheiro deve ficar  -
+#   com instruções de onde o path do ficheiro deve ficar  - PRIORITY 
+#WORKING HERE
 #
 # readme -
 # requirements -
