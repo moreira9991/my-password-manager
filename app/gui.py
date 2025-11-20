@@ -1,13 +1,11 @@
-from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END, messagebox,Toplevel, Frame, StringVar, Scrollbar
+from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END,Toplevel, Frame, StringVar, Scrollbar
 from pathlib import Path
 from app.service import generate_password, normalize_site, custom_message_info, toggle_password, AccountService
-from app.store_json import EncryptedStore, VaultDecryptionError
 
 class AppGUI:
     def __init__(self, root: Tk, service:AccountService)-> None:
         self.root = root
         self.service=service
-        self.data = self.service.data
 
         self.root.title("My Password Manager")
         self.root.config(padx=20,pady=20)
@@ -16,11 +14,6 @@ class AppGUI:
 
         self.root.bind("<Return>", lambda e:self.add_btn.invoke())
         self.root.bind("<KP_Enter>", lambda e:self.add_btn.invoke())
-
-        #Store/data
-        # self.store =JsonStore(Path("Passwords_data.json"))
-        # self.service= AccountService(self.store)
-        # self.data = self.store.load()
 
         self.canvas = Canvas (width=1000, height=340,highlightthickness=0)
         logo_path = Path("assets/logo.png")
@@ -65,10 +58,10 @@ class AppGUI:
         self.add_btn = Button(text="Add", width=50, command=self.on_add)
         self.add_btn.grid(column=1, row=5, columnspan=2, sticky="W")
 
-        self.search_btn = Button(text="My password's", command=self.on_cls)
+        self.search_btn = Button(text="My passwords", command=self.on_cls)
         self.search_btn.grid(column=2, row=1, sticky="WE")
 
-        #Focous will start on the web entry box
+        #Focus will start on the website entry box
         self.web_inpt.focus()
 
     # Generates a lvl4 password
@@ -106,7 +99,6 @@ class PasswordListView:
         parent.grid_rowconfigure(0, weight=1)
         parent.grid_columnconfigure(0, weight=1)
 
-        # frame interno
         self.inner_frame = Frame(self.canvas)
         self.window_id = self.canvas.create_window((0, 0), window=self.inner_frame, anchor="nw")
 
@@ -115,7 +107,6 @@ class PasswordListView:
         self.canvas.bind("<Configure>", self._on_canvas_configure)
         self._smooth_scroll(self.canvas)
 
-        # armazena refs de linhas
         self.rows = []
 
     def _on_inner_configure(self, event):
@@ -138,14 +129,12 @@ class PasswordListView:
             except Exception:
                 return
 
-        # evita bind duplo
         if getattr(canvas, "_smooth_scroll_bound", False):
             return
 
         system = str(canvas.tk.call("tk", "windowingsystem"))
 
         if system == "x11":
-            # handler comum para Button-4/5, mas a ignorar scroll horizontal (Shift)
             def on_linux_scroll(event):
                 # we ignore diagional scrolls
                 if event.state & 0x0001:  # bit de Shift
@@ -159,7 +148,7 @@ class PasswordListView:
             canvas.bind_all("<Button-4>", on_linux_scroll, add="+")
             canvas.bind_all("<Button-5>", on_linux_scroll, add="+")
         else:
-            # Windows / macOS → delta funciona bem
+            # Windows / macOS 
             canvas.bind_all(
                 "<MouseWheel>",
                 lambda e: move(-1 if e.delta > 0 else +1),
@@ -168,7 +157,6 @@ class PasswordListView:
 
         def _cleanup(_evt=None):
             try:
-                # como usámos bind_all, temos de usar unbind_all
                 canvas.unbind_all("<Button-4>")
                 canvas.unbind_all("<Button-5>")
                 canvas.unbind_all("<MouseWheel>")
@@ -180,18 +168,12 @@ class PasswordListView:
                 except Exception:
                     pass
 
-        # quando o canvas for destruído, limpamos os binds
         canvas.bind("<Destroy>", _cleanup, add="+")
         canvas._smooth_scroll_bound = True
 
 
-
-#TESTING HERE
-
     def render(self, data: dict):
         state ={"visible":False}
-        #Renderiza as linhas a partir de um dicionário de sites e contas."""
-        # Limpa linhas antigas
         for r in self.rows:
             for w in r["widgets"]:
                 w.destroy()
@@ -201,8 +183,6 @@ class PasswordListView:
         bg_default = self.parent.cget("bg")
 
         for site, accounts in data.items():
-            if site == "__MASTERPASSWORD":
-                continue
             for acc in accounts:
                 username = acc["username"]
                 password = acc["password"]
@@ -219,9 +199,6 @@ class PasswordListView:
                 pass_ent = Entry(self.inner_frame, textvariable=pass_var, state="readonly",
                                  relief="flat", readonlybackground=bg, fg="black", width=20,show="*")
 
-
-                #teste
-                #liga o duplo clique ao toggle_pass
                 pass_ent.bind("<Double-Button-1>",lambda w, ent=pass_ent, st=state: toggle_password(None,ent,st))
 
                 site_ent.grid(column=0, row=cnt, sticky="w", padx=10, pady=5)
@@ -239,14 +216,13 @@ class MyPasswords:
         self.root1=Toplevel(root1) 
         self.root1.transient(root1)
         self.root1.grab_set() 
-        self.root1.title("My Password's")
+        self.root1.title("My Passwords")
         self.root1.config(padx=10,pady=10)
         self.root1.geometry("1580x1000")
         self.root1.resizable(False,False)
 
         self.service=service
-        self.data = self.service.data
-
+        
         self.bg=self.root1.cget("bg")
   
         self.root1.grid_rowconfigure(0,weight=0)
@@ -255,11 +231,6 @@ class MyPasswords:
         self.root1.grid_columnconfigure(1,weight=1)
         self.root1.grid_columnconfigure(2,weight=1)
 
-        # self.store =JsonStore(Path("Passwords_data.json"))
-        # self.service= AccountService(self.store)
-        # self.data = self.store.load()
-        
-        
         self.root1.bind("<Return>", lambda e:self.search_btn.invoke())
         self.root1.bind("<KP_Enter>", lambda e:self.search_btn.invoke())
         
@@ -274,7 +245,7 @@ class MyPasswords:
         left_container.grid(row=1, column=0, columnspan=3, sticky="nsew", padx=0, pady=0)
 
         self.password_list = PasswordListView(left_container)
-        self.password_list.render(self.data)
+        self.password_list.render(self.service.data)
         
         self.wbsite=Entry(self.root1,width=20)
         self.wbsite.grid(column=3,row=0)
@@ -288,7 +259,7 @@ class MyPasswords:
         self.manage_master_btn=Button(right_container,text="Manage\nMaster Password",command=self.on_manage_mpwd)
         self.manage_master_btn.pack(fill="x")
 
-        self.backup_btn=Button(right_container,text="Backup\npassword's")
+        self.backup_btn=Button(right_container,text="Backup\npasswords")
         self.backup_btn.pack(fill="x",anchor="s")
 
         self.wbsite.focus()
@@ -300,7 +271,7 @@ class MyPasswords:
             custom_message_info(parent=self.root1,title="Error!", message="Please type a website to search.")
             return
         #check if exists
-        entry = self.data.get(normalize_site(site))
+        entry = self.service.data.get(normalize_site(site))
 
         if entry:
             root2=Toplevel(self.root1)
@@ -339,8 +310,6 @@ class MyPasswords:
                                  width=25,show="*")
                 pass_entry.grid(column=1,row=cnt,sticky="w",padx=10,pady=5)
 
-                                #teste
-                #liga o duplo clique ao toggle_pass
                 pass_entry.bind("<Double-Button-1>",lambda w, ent=pass_entry, st=state: toggle_password(None,ent,st))
 
                 cnt+=1
@@ -351,13 +320,13 @@ class MyPasswords:
     # to enable btns on_off= False
     # to disable btns on_off=True
     def disable_btns(self,on_off:bool):
-        if on_off == True:
+        if on_off:
             self.manage_pwd_btn.config(state="disabled")
             self.manage_master_btn.config(state="disabled")
             self.search_btn.config(state="disabled")
             self.backup_btn.config(state="disabled")
             self.wbsite.config(state="disabled")
-        if on_off == False:
+        else:
             self.manage_pwd_btn.config(state="normal")
             self.manage_master_btn.config(state="normal")
             self.search_btn.config(state="normal")
@@ -408,7 +377,7 @@ class MyPasswords:
             return
 
         #checks if there is data saved for site
-        if self.data.get(key):
+        if self.service.data.get(key):
             data = self.service.find(site=self.site,username=self.user)
             if data:
                 password= data["password"]
@@ -428,9 +397,6 @@ class MyPasswords:
             edit_btn=Button(self.root3,text="Edit",command=lambda:self.on_edit())
             edit_btn.grid(column=2,row=1,sticky="WE")
 
-                        #teste
-
-            #liga o duplo clique ao toggle_pass
             self.pwd_entry.bind("<Double-Button-1>",lambda w, ent=self.pwd_entry, st=state: toggle_password(None,ent,st))
         else:
             custom_message_info(parent=self.root3,title="Error!",message=f"No data found for {key.capitalize()}")
@@ -480,7 +446,7 @@ class MyPasswords:
             custom_message_info(parent=self.root4,title="Success!",message="Press 'OK' to continue.")
             self.root4.destroy()
 
-            #set new
+            #open window to set a new master password
             self.root5=Toplevel(self.root1)
             self.root5.title("Set new master password.")
             self.root5.config(padx=10,pady=10)
@@ -528,7 +494,6 @@ class MyPasswords:
             self.edit_enter_btn.grid(row=2,column=1,columnspan=2,sticky="we")
 
             self._mpwd_inpt.focus()
-
         
 
     def on_edit_mpw(self)->None:
@@ -542,7 +507,6 @@ class MyPasswords:
             self.root1.destroy()
         else:
             return
-
 
 class MasterGUI:
     def __init__(self, root: Tk, service:AccountService)-> None:
@@ -616,16 +580,13 @@ class MasterGUI:
             self.pass_inpt.focus()
 
     def on_set(self)->None:
-        #testando. Se der para retornar True, destroy janelas e poem result=True, caso contrario faz return
+        #Initialize vault. If successful ,closes window and continue
         if self.service.initialize_vault(window=self.root,master_pwd=self.pass_inpt.get(),confirm_pwd=self.conf_pass_inpt.get()):
-        #if self.service.master_pwd_set(window=self.root,master_pwd=self.pass_inpt.get(),confirm_m_pwd=self.conf_pass_inpt.get()):
             self.result=True
             self.root.destroy()
 
 
     def on_verify(self)->None:
-
         if self.service.verify_master(window=self.root,master_pwd=self.pass_inpt.get()):
-            #custom_message_info(parent=self.root,title="Success!",message="Welcome Back!")
             self.result=True
             self.root.destroy()
