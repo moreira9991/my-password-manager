@@ -11,15 +11,13 @@ from cryptography.hazmat.primitives.ciphers.aead import AESGCM
 @dataclass
 class KdfParams:
     time_cost: int = 3
-    memory_cost: int = 65536  # in KiB (64 MB)
+    memory_cost: int = 65536  #(64 MB)
     parallelism: int = 2
     hash_len: int = 32
 
-
+# Derive a secret key from the master password using Argon2id
 def derive_key_from_master(master_password: str, salt: bytes, params: KdfParams) -> bytes:
-    """
-    Derive a secret key from the master password using Argon2id.
-    """
+
     return hash_secret_raw(
         secret=master_password.encode("utf-8"),
         salt=salt,
@@ -29,12 +27,9 @@ def derive_key_from_master(master_password: str, salt: bytes, params: KdfParams)
         hash_len=params.hash_len,
         type=Type.ID,
     )
-
-
+# Encrypt a Python dict into an envolope ready to be saved to disk
 def encrypt_vault(master_password: str, plain_data: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Encrypt a Python dict (vault data) into an envelope ready to be saved to disk.
-    """
+
     kdf_params = KdfParams()
     salt = os.urandom(16)
     key = derive_key_from_master(master_password, salt, kdf_params)
@@ -65,11 +60,10 @@ def encrypt_vault(master_password: str, plain_data: Dict[str, Any]) -> Dict[str,
     return envelope
 
 
+# Decrypt an envelope (loaded from disck) into the original Python dict.
+# Raises an exception if the password is wrong or data is corrupted.
 def decrypt_vault(master_password: str, envelope: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Decrypt an envelope (loaded from disk) into the original Python dict.
-    Raises an exception if the password is wrong or data is corrupted.
-    """
+
     kdf_info = envelope["kdf"]
     cipher_info = envelope["cipher"]
 
@@ -92,22 +86,4 @@ def decrypt_vault(master_password: str, envelope: Dict[str, Any]) -> Dict[str, A
 
     return data
 
-if __name__ == "__main__":
-    master = "minha-master-password-super-secreta"
-
-    original = {
-        "example.com": [
-            {"username": "user1", "password": "pass1"},
-            {"username": "user2", "password": "pass2"},
-        ]
-    }
-
-    envelope = encrypt_vault(master, original)
-    print("Encrypted envelope:", envelope)
-
-    recovered = decrypt_vault(master, envelope)
-    print("Decrypted data:", recovered)
-
-    assert recovered == original
-    print("OK: encryption/decryption works correctly.")
 

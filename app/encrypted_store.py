@@ -1,54 +1,21 @@
-# import json
-# from pathlib import Path
-# from typing import Any
-
-
-# class JsonStore:
-#     # JSON store (no encryption).
-#     # Data shape -> {site_key:{"username":str,"password":str},...}
-#     def __init__(self, path: Path|str = "Passwords_data.json") -> None:
-#         self.path = Path(path)
-
-#     def load(self) -> dict[str,Any]:
-#         if not self.path.exists():
-#             return{}
-#         try:
-#             with self.path.open("r", encoding="utf-8")as f:
-#                 return json.load(f)
-#         except json.JSONDecodeError as e:
-#             return{}
-        
-#     def save(self, data: dict[str,Any]) -> None:
-#     # Ensure parent exists (in case you move the file later)
-#         if self.path.parent and not self.path.parent.exists():
-#             self.path.parent.mkdir(parents=True, exist_ok=True)
-#         with self.path.open("w", encoding="utf-8") as f:
-#             json.dump(data, f, indent=4, ensure_ascii=False)
-
 import json
 from pathlib import Path
-from typing import Any, Dict
-
+from typing import Any
 from app.crypto_vault import encrypt_vault, decrypt_vault
 
-
+# Raised when decryption fails due to wrong password or corrupted file
 class VaultDecryptionError(Exception):
-    """Raised when decryption fails (wrong password or corrupted file)."""
     pass
 
-
+# Encrypt vault store.
+# In memory: {site_key:{"username":str,"password":str},...}
+# On disk: encrypted envelope created by encrypt_vault()
 class EncryptedStore:
-    """
-    Encrypted vault store.
-
-    In memory: {site_key: {"username": str, "password": str}, ...}
-    On disk : encrypted envelope created by encrypt_vault().
-    """
 
     def __init__(self, path: Path | str = "vault.pmdb") -> None:
         self.path = Path(path)
 
-    def _load_envelope(self) -> Dict[str, Any]:
+    def _load_envelope(self) -> dict[str, Any]:
         if not self.path.exists():
             raise FileNotFoundError(f"Vault file not found: {self.path}")
         try:
@@ -57,19 +24,18 @@ class EncryptedStore:
         except json.JSONDecodeError as e:
             raise RuntimeError(f"Failed to parse vault file: {e}") from e
 
-    def _save_envelope(self, envelope: Dict[str, Any]) -> None:
+    def _save_envelope(self, envelope: dict[str, Any]) -> None:
         if self.path.parent and not self.path.parent.exists():
             self.path.parent.mkdir(parents=True, exist_ok=True)
         with self.path.open("w", encoding="utf-8") as f:
             json.dump(envelope, f, indent=4, ensure_ascii=False)
 
-    def load(self, master_password: str) -> dict[str, Any]:
-        """
-        Load and decrypt the vault.
 
-        - If file does not exist -> create empty vault with this password.
-        - If exists -> try to decrypt with this password.
-        """
+    # Load and decrypt the vault
+    # If file does not exists creates empty vault with new master password
+    # If exists, try to decrypt with master password provided
+    def load(self, master_password: str) -> dict[str, Any]:
+  
         # First run: no vault yet
         if not self.path.exists():
             data: dict[str, Any] = {}
@@ -89,9 +55,9 @@ class EncryptedStore:
                 "Failed to decrypt vault. Wrong password or corrupted file."
             ) from e
 
+
+    # Encrypt and save the given data dict using the provided master password
     def save(self, master_password: str, data: dict[str, Any]) -> None:
-        """
-        Encrypt and save the given data dict using the provided master password.
-        """
+
         envelope = encrypt_vault(master_password, data)
         self._save_envelope(envelope)

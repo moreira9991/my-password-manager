@@ -27,5 +27,7 @@ Thumbs.db
 # --- Sensitive data ---
 vault.bin
 vault.pmdb
+dev-notes.md
+original.png
 # --- Cache ---
 *.cache

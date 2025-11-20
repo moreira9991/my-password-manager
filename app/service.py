@@ -1,6 +1,6 @@
 from random import choice, randint, shuffle
-from tkinter import Button,Entry,Toplevel,Label,Frame,Tk
-from app.store_json import EncryptedStore, VaultDecryptionError
+from tkinter import Button, Entry, Toplevel, Label, Frame, Tk
+from app.encrypted_store import EncryptedStore, VaultDecryptionError
 from typing import Any
 from zxcvbn import zxcvbn
 
@@ -31,8 +31,6 @@ def custom_message_info(parent:Tk, title, message):
     win.resizable(False,False)
     win.attributes("-topmost",True)
     win.transient(parent)
-    
-    win.bind("<Return>", lambda e:btn.invoke())
 
     parent.update_idletasks()
     x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
@@ -43,6 +41,8 @@ def custom_message_info(parent:Tk, title, message):
     lbl.pack(expand=True,pady=20)
     btn = Button(win, text="OK",command=win.destroy,width=10)
     btn.pack(pady=10)
+
+    win.bind("<Return>", lambda e:btn.invoke())
 
     win.deiconify()
     win.grab_set()
@@ -62,8 +62,6 @@ def custom_message_askokcancel(parent:Tk, title, message)-> bool:
     win.attributes("-topmost",True)
     win.transient(parent)
 
-    win.bind("<Return>", lambda e:ok_btn.invoke())
-    win.bind("<KP_Enter>", lambda e:ok_btn.invoke())
 
     parent.update_idletasks()
     x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
@@ -92,6 +90,9 @@ def custom_message_askokcancel(parent:Tk, title, message)-> bool:
     cancel_btn = Button(btn_frame, text="Cancel",command=on_cancel,width=10)
     cancel_btn.pack(side="right",padx=20)
 
+    win.bind("<Return>", lambda e:ok_btn.invoke())
+    win.bind("<KP_Enter>", lambda e:ok_btn.invoke())
+
     win.deiconify()
     win.grab_set()
     ok_btn.focus_set()
@@ -99,8 +100,10 @@ def custom_message_askokcancel(parent:Tk, title, message)-> bool:
 
     return result_message
 
+
 def password_strength_score(score: int) -> str:
     return ["very weak","weak","okay","strong","very strong"][score]
+
 
 def add_password_msg(parent:Tk,site:str,pwd:str):
     result = zxcvbn(pwd)["score"]
@@ -153,8 +156,6 @@ class AccountService:
         self.master_password:str  | None = None
         self.data : dict[str,Any]={}
         
-
-
     # Returns True if the vault file does not exists yet.
     def is_first_run(self)-> bool:
         return not self.store.path.exists()
@@ -180,9 +181,7 @@ class AccountService:
             return False
 
         try:
-            # EncryptedStore.load(...) irá:
-            # - criar vault vazio se o ficheiro não existir
-            # - devolver {} nessa primeira vez
+            # create empty vault if file does not exists
             self.data = self.store.load(master_pwd)
             self.master_password = master_pwd
         except Exception as e:
@@ -196,11 +195,9 @@ class AccountService:
         custom_message_info(parent=window, title="Success!", message="Master password set!")
         return True
     
-## WORKING HERE - separar em duas funcoes
+    # verifies master password and load data into memory.
     def verify_master(self, window: Tk, master_pwd: str) -> bool:
-        """
-        Normal login: verify master password and load data into memory.
-        """
+
         if not master_pwd.strip():
             custom_message_info(
                 parent=window,
@@ -216,7 +213,7 @@ class AccountService:
             custom_message_info(
                 parent=window,
                 title="Error!",
-                message="Provide the correct password to continue.",
+                message="Incorrect master password or corrupted vault file.",
             )
             return False
 
@@ -232,12 +229,10 @@ class AccountService:
         custom_message_info(parent=window, title="Success!", message="Welcome back!")
         return True
     
+    # Confirm the current master password.
+    # Does not reload the vault, only compares against the master already in memory
     def confirm_current_master(self, window: Tk, master_pwd: str) -> bool:
-        """
-        Used inside the app (not at login) to confirm the current master password.
 
-        Does NOT reload the vault, only compares against the master already in memory.
-        """
         if not master_pwd.strip():
             custom_message_info(
                 parent=window,
@@ -257,27 +252,22 @@ class AccountService:
         return True
 
 
-## WORKING HERE
-
-
-#done
     def find(self,site:str,username:str):
         key = normalize_site(site)
         for acc in self.data.get(key,[]):
             if acc["username"]==username:
                 return acc 
-        return None
+        return False
     
 
-
-#done
 #checks if userinpt allready exists in data
     def check_acc(self,entry,check_user:str,username_inpt:str):
         for acc in entry:
             if (username_inpt== acc["username"]) and (username_inpt!=check_user):
                 return True
+        return False
 
-#done
+
     def add(self,window:Tk, site:str, username:str, password: str):
         key = normalize_site(site)
         #checks for empty entries
@@ -311,7 +301,6 @@ class AccountService:
             return True
         
 
-# done
 # edits accounts, before checking and blocking for unwanted interactions
     def edit (self,main_window:Tk,window:Tk,site:str,username:str,new_username:str,new_password:str):
         key = normalize_site(site)
@@ -348,7 +337,7 @@ class AccountService:
                             title="Error",
                             message="Internal error: master password not set.",
                         )
-                        return False
+                        return
 
 
                     acc["username"]= new_username
@@ -363,7 +352,6 @@ class AccountService:
                     return
 
 
-# done
     def delete (self,main_window:Tk,window:Tk,site:str,username:str,pwd:str):
         if custom_message_askokcancel(
             parent=window,
@@ -385,7 +373,7 @@ class AccountService:
         else:
             return
         
-#done
+
     def master_pwd_set (self,main_window:Tk,window:Tk,master_pwd:str,confirm_m_pwd):
         if not master_pwd.strip():
             custom_message_info(parent=window, title="Error!", message="To continue, set a new master password.")
