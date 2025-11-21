@@ -118,7 +118,16 @@ AES-GCM → encrypted vault
 ```
 Without the correct master password, recovering vault data is computationally impractical.
 
+
+“Login screen requiring the master password. After providing the correct password, the user is granted access to the main application.”
 ## Screenshots
+
+<p align="center">
+  <img src="assets/screenshots/login_screen.png" width="650">
+</p>
+<p align="center"><em>Login screen - After providing the correct password, the user is granted access to the main application.</em></p>
+
+<br>
 
 <p align="center">
   <img src="assets/screenshots/main_window.png" width="650">
@@ -173,7 +182,6 @@ Without the correct master password, recovering vault data is computationally im
 - **1. Backup system**
 - **2. Improved user experience**
 - **3. Inactivity will close session**
-- **4. Original logo**
 
 
 

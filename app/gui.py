@@ -7,6 +7,11 @@ class AppGUI:
         self.root = root
         self.service=service
 
+        ICON_PATH=Path("assets/icon.png")
+        icon_img= PhotoImage(file=str(ICON_PATH))
+        self.root.iconphoto(True,icon_img)
+
+
         self.root.title("My Password Manager")
         self.root.config(padx=20,pady=20)
         self.root.resizable(False,False)
@@ -19,8 +24,8 @@ class AppGUI:
         logo_path = Path("assets/logo.png")
         self.logo = PhotoImage(file=str(logo_path))
         
-        self.canvas.create_image(500, 160, image=self.logo)
-        self.canvas.grid(column=0,columnspan=3,row=0,sticky="w")
+        self.canvas.create_image(500, 175, image=self.logo)
+        self.canvas.grid(column=0,columnspan=3,row=0,sticky="we")
 
         #website
         self.web_text = Label(text="Website:")
@@ -515,6 +520,10 @@ class MasterGUI:
         self.root.title("Provide master password to continue")
         self.root.config(padx=20,pady=20)
         self.root.resizable(False,False)
+
+        ICON_PATH=Path("assets/icon.png")
+        icon_img= PhotoImage(file=str(ICON_PATH))
+        self.root.iconphoto(True,icon_img)
 
         self.result = False
 
