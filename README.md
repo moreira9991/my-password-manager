@@ -10,7 +10,6 @@ All stored credentials are protected using industry-standard AES-GCM encryption 
 This project serves as a demonstration of strong software architecture, GUI development, and secure data handling.
 
 
-
 ## Features
 
 ### Security
@@ -94,19 +93,16 @@ python main.py
 
 
 ## Encryption Details
-This password manager uses state-of-the-art cryptographic primitives:
+All saved passwords are stored only inside an encrypted file called `vault.pmdb`.  
+This file is useless on its own — it can only be opened with the correct master password.
 
-AES-GCM (256-bit)
-Authenticated symmetric encryption
+Behind the scenes, two main building blocks are used:
 
-Used in TLS 1.3, WhatsApp, Signal, SSH
+- **Argon2id** – takes your master password and turns it into a strong encryption key.  
+  It is designed to be slow and memory-hard, which makes large-scale cracking attacks much harder.
 
-Argon2id
-Memory-hard password-based key derivation
-
-Protects against GPU and ASIC cracking
-
-Winner of the Password Hashing Competition
+- **AES-GCM (256-bit)** – uses that key to encrypt and decrypt the vault.  
+  This mode provides both confidentiality (hides the data) and integrity (detects tampering).
 
 Internal workflow:
 ```
@@ -119,7 +115,6 @@ AES-GCM → encrypted vault
 Without the correct master password, recovering vault data is computationally impractical.
 
 
-“Login screen requiring the master password. After providing the correct password, the user is granted access to the main application.”
 ## Screenshots
 
 <p align="center">
@@ -176,13 +171,11 @@ Without the correct master password, recovering vault data is computationally im
 </p>
 <p align="center"><em>Manage Master Password — update the master password with strength validation.</em></p>
 
-
  
 ## Coming Soon
 - **1. Backup system**
 - **2. Improved user experience**
 - **3. Inactivity will close session**
-
 
 
 ## Disclaimer
@@ -193,4 +186,4 @@ Although strong cryptographic techniques are implemented, no formal security aud
 MIT License — free for personal and educational use.
 
 ## About the Author
-Developed by Gui Moreira as part of a personal journey in Python development, cryptography, and secure application design.
+Developed by Guilherme Moreira as part of a personal journey in Python development, cryptography, and secure application design.
