@@ -1,6 +1,6 @@
 from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END,Toplevel, Frame, StringVar, Scrollbar
 from pathlib import Path
-from app.service import generate_password, normalize_site, custom_message_info, toggle_password, AccountService
+from app.service import generate_password, normalize_site, custom_message_info, toggle_password, AccountService, custom_message_askokcancel
 
 class AppGUI:
     def __init__(self, root: Tk, service:AccountService)-> None:
@@ -19,6 +19,8 @@ class AppGUI:
 
         self.root.bind("<Return>", lambda e:self.add_btn.invoke())
         self.root.bind("<KP_Enter>", lambda e:self.add_btn.invoke())
+
+        self.root.bind("<Escape>",lambda e:self.close_window())
 
         self.canvas = Canvas (width=1000, height=340,highlightthickness=0)
         logo_path = Path("assets/logo.png")
@@ -68,6 +70,11 @@ class AppGUI:
 
         #Focus will start on the website entry box
         self.web_inpt.focus()
+
+    def close_window(self):
+        if custom_message_askokcancel(parent=self.root,title="Closing app...",message="Press 'OK' to quit."):
+            self.root.destroy()
+    
 
     # Generates a lvl4 password
     def on_generate(self) -> None:
@@ -238,6 +245,8 @@ class MyPasswords:
 
         self.root1.bind("<Return>", lambda e:self.search_btn.invoke())
         self.root1.bind("<KP_Enter>", lambda e:self.search_btn.invoke())
+
+        self.root1.bind("<Escape>",lambda e:self.root1.destroy())
         
         right_container = Frame(self.root1)
         right_container.grid(row=1,column=4,sticky="n")
@@ -283,6 +292,8 @@ class MyPasswords:
             root2.title(site.capitalize())
             Label(root2, text="Email/Username", font=("Arial",10,"bold")).grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
             Label(root2, text="Password", font=("Arial",10,"bold")).grid(column=1, row= 0 ,sticky="w",padx=10,pady=5)
+            root2.bind("<Escape>",lambda e:root2.destroy())
+
             root2.transient(self.root1) 
             root2.grab_set()
             state={"visible":False}
@@ -347,6 +358,9 @@ class MyPasswords:
 
         self.root3.bind("<Return>", lambda e:self.manage_search_btn.invoke())
         self.root3.bind("<KP_Enter>", lambda e:self.manage_search_btn.invoke())
+
+        self.root3.bind("<Escape>",lambda e:self.root3.destroy())
+
 
         #disable previous buttons
         # Here we disable buttons to prevent doing anything on the previous page, other than being
@@ -428,8 +442,12 @@ class MyPasswords:
         self.root4.resizable(False,False)
         self.root4.transient(self.root1) 
         self.root4.grab_set() 
+
         self.root4.bind("<Return>", lambda e:self.enter_btn.invoke())
         self.root4.bind("<KP_Enter>", lambda e:self.enter_btn.invoke())
+
+        self.root4.bind("<Escape>",lambda e:self.root4.destroy())
+
         self._show_state= {"visible":False}
 
         Label(self.root4, text="Master password: ").grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
@@ -457,8 +475,11 @@ class MyPasswords:
             self.root5.config(padx=10,pady=10)
             self.root5.transient(self.root1) 
             self.root5.grab_set()
+
             self.root5.bind("<Return>", lambda e:self.edit_enter_btn.invoke())
             self.root5.bind("<KP_Enter>", lambda e:self.edit_enter_btn.invoke())
+            self.root5.bind("<Escape>",lambda e:self.root5.destroy())
+
             self._show_state= {"visible":False}
             self.confirm_show_state= {"visible":False}
 
