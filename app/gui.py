@@ -249,7 +249,7 @@ class MyPasswords:
         self.root1.bind("<Escape>",lambda e:self.root1.destroy())
         
         right_container = Frame(self.root1)
-        right_container.grid(row=1,column=4,sticky="n")
+        right_container.grid(row=1,column=3,sticky="NSWE")
 
         Label(self.root1, text="Site", font=("Arial", 10, "bold")).grid(column=0, row=0, sticky="w", padx=10, pady=5)
         Label(self.root1, text="Email/Username", font=("Arial", 10, "bold")).grid(column=1, row=0, sticky="w", padx=10, pady=5)
@@ -264,8 +264,8 @@ class MyPasswords:
         self.wbsite=Entry(self.root1,width=20)
         self.wbsite.grid(column=3,row=0)
 
-        self.search_btn = Button(self.root1,text="Search",command=self.onsearch)
-        self.search_btn.grid(column=4,row=0,sticky="we")
+        self.search_btn = Button(right_container,text="Search",command=self.onsearch)
+        self.search_btn.pack(fill="x")
 
         self.manage_pwd_btn = Button(right_container,text="Manage Passwords",command=self.on_manage)
         self.manage_pwd_btn.pack(fill="x")
@@ -273,8 +273,8 @@ class MyPasswords:
         self.manage_master_btn=Button(right_container,text="Manage\nMaster Password",command=self.on_manage_mpwd)
         self.manage_master_btn.pack(fill="x")
 
-        self.backup_btn=Button(right_container,text="Backup\npasswords")
-        self.backup_btn.pack(fill="x",anchor="s")
+        self.backup_btn=Button(right_container,text="Backup\nPasswords")
+        self.backup_btn.pack(fill="x",anchor="s",side="bottom")
 
         self.wbsite.focus()
 
@@ -430,7 +430,7 @@ class MyPasswords:
                           new_password=self.pwd_entry.get()
                           )
 
-## -> Deletes account data
+    # Deletes account data
     def on_delete(self,site,username): 
         self.service.delete(main_window=self.root1,window=self.root3,site=site,username=username,pwd=self.pwd_entry.get())
 
