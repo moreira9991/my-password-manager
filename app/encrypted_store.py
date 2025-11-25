@@ -2,7 +2,8 @@ import json
 from pathlib import Path
 from typing import Any
 from app.crypto_vault import encrypt_vault, decrypt_vault
-
+from datetime import datetime
+import shutil
 # Raised when decryption fails due to wrong password or corrupted file
 class VaultDecryptionError(Exception):
     pass
@@ -11,9 +12,9 @@ class VaultDecryptionError(Exception):
 # In memory: {site_key:{"username":str,"password":str},...}
 # On disk: encrypted envelope created by encrypt_vault()
 class EncryptedStore:
-
     def __init__(self, path: Path | str = "vault.pmdb") -> None:
         self.path = Path(path)
+        self.backup_path = Path("backup/")
 
     def _load_envelope(self) -> dict[str, Any]:
         if not self.path.exists():
@@ -61,3 +62,13 @@ class EncryptedStore:
 
         envelope = encrypt_vault(master_password, data)
         self._save_envelope(envelope)
+
+    # Creates a backup vault with time stamp of its creation.
+    def create_backup_vault(self) -> Path:
+        self.backup_path.mkdir(parents=True,exist_ok=True)
+
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        backup_file = self.backup_path / f"vault_backup_{timestamp}{self.path.suffix}"
+
+        shutil.copy2(self.path,backup_file)
+        return backup_file

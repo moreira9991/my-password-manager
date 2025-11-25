@@ -3,6 +3,26 @@ from tkinter import Button, Entry, Toplevel, Label, Frame, Tk
 from app.encrypted_store import EncryptedStore, VaultDecryptionError
 from typing import Any
 from zxcvbn import zxcvbn
+from app.email_service import send_backup_email
+from pathlib import Path
+from zipfile import ZipFile, ZIP_DEFLATED
+from datetime import datetime
+
+
+# Create a ZIP file containing the encypted backup and the instructions file.
+def create_backup_zip(backup_file: Path, instructions_file: Path, backup_dir: Path) -> Path:
+    backup_dir.mkdir(parents=True, exist_ok=True)
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    zip_path = backup_dir / f"password_manager_backup_{timestamp}.zip"
+
+    with ZipFile(zip_path, "w", ZIP_DEFLATED) as zf:
+        # inside the zip, guardamos os nomes simples
+        zf.write(backup_file, arcname=backup_file.name)
+        zf.write(instructions_file, arcname=instructions_file.name)
+
+    return zip_path
+
 
 def normalize_site(name: str) -> str:
 #Normalize website key to avoid case/whitespace issues.
@@ -99,6 +119,53 @@ def custom_message_askokcancel(parent:Tk, title, message)-> bool:
     win.wait_window()
 
     return result_message
+
+
+def email_message_askokcancel(parent:Tk)-> str|None:
+    result_email=None
+    win= Toplevel(parent)
+    win.withdraw()
+    win.title("Backup Passwords")
+    win.configure(padx=10,pady=10)
+
+    win.resizable(False,False)
+    win.attributes("-topmost",True)
+    win.transient(parent)
+
+    parent.update_idletasks()
+    x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
+    y = parent.winfo_rooty()+(parent.winfo_height()//2-150)
+    win.geometry(f"+{x}+{y}")
+
+    lbl = Label(win, text="Provide E-mail to send backup file",font=("Arial",12,"bold"),justify="center")
+    lbl.grid(column=0,row=0,columnspan=2)
+
+    e_mail = Entry(win,width=20)
+    e_mail.grid(column=0,row=1,columnspan=2,sticky="WE",pady=10)
+
+    def on_ok():
+        nonlocal result_email
+        result_email= e_mail.get()
+        win.destroy()
+
+    def on_cancel():
+        win.destroy()
+
+    ok_btn = Button(win, text="OK",command=on_ok,width=10)
+    ok_btn.grid(row=2,column=0,sticky="E",padx=10)
+
+    cancel_btn = Button(win, text="Cancel",command=on_cancel,width=10)
+    cancel_btn.grid(row=2,column=1,sticky="W",padx=10)
+
+    win.bind("<Return>", lambda e:ok_btn.invoke())
+    win.bind("<KP_Enter>", lambda e:ok_btn.invoke())
+
+    win.deiconify()
+    win.grab_set()
+    ok_btn.focus_set()
+    win.wait_window()
+
+    return result_email
 
 
 def password_strength_score(score: int) -> str:
@@ -301,7 +368,7 @@ class AccountService:
             return True
         
 
-# edits accounts, before checking and blocking for unwanted interactions
+    # edits accounts, before checking and blocking for unwanted interactions
     def edit (self,main_window:Tk,window:Tk,site:str,username:str,new_username:str,new_password:str):
         key = normalize_site(site)
         entry=self.data.get(key)
@@ -396,5 +463,35 @@ class AccountService:
         
         custom_message_info(parent=window, title="Success!", message="Master password set!")
         return True
+    
 
-            
+    def backup_file(self,backup_email):
+        backup_file=self.store.create_backup_vault()
+        instructions_file = Path("backup/instructions.txt")
+
+        zip_path = create_backup_zip(
+            backup_file=backup_file,
+            instructions_file=instructions_file,
+            backup_dir=self.store.backup_path
+        )
+
+        send_backup_email(
+            to_email=backup_email,
+            attachments=[zip_path],
+        )
+        self.clean_backup_dir(backup_dir=self.store.backup_path)
+
+
+    # removes all files inside backup dir except "instructions.txt"
+    def clean_backup_dir(self,backup_dir: Path) -> None:
+        for item in backup_dir.iterdir():
+            # Skip the instructions file
+            if item.name == "instructions.txt":
+                continue
+
+            # Only delete files, not folders
+            if item.is_file():
+                try:
+                    item.unlink()
+                except Exception as e:
+                    print(f"Failed to delete {item}: {e}")
