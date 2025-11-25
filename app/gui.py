@@ -1,6 +1,6 @@
 from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END,Toplevel, Frame, StringVar, Scrollbar
 from pathlib import Path
-from app.service import generate_password, normalize_site, custom_message_info, toggle_password, AccountService, custom_message_askokcancel
+from app.service import generate_password, normalize_site, custom_message_info, toggle_password, AccountService, custom_message_askokcancel, email_message_askokcancel
 
 class AppGUI:
     def __init__(self, root: Tk, service:AccountService)-> None:
@@ -270,10 +270,10 @@ class MyPasswords:
         self.manage_pwd_btn = Button(right_container,text="Manage Passwords",command=self.on_manage)
         self.manage_pwd_btn.pack(fill="x")
 
-        self.manage_master_btn=Button(right_container,text="Manage\nMaster Password",command=self.on_manage_mpwd)
+        self.manage_master_btn=Button(right_container,text="Manage\nMaster Password",command=lambda:self.on_manage_mpwd(backup=False))
         self.manage_master_btn.pack(fill="x")
 
-        self.backup_btn=Button(right_container,text="Backup\nPasswords")
+        self.backup_btn=Button(right_container,text="Backup\nPasswords", command=lambda:self.on_manage_mpwd(backup=True))
         self.backup_btn.pack(fill="x",anchor="s",side="bottom")
 
         self.wbsite.focus()
@@ -435,7 +435,7 @@ class MyPasswords:
         self.service.delete(main_window=self.root1,window=self.root3,site=site,username=username,pwd=self.pwd_entry.get())
 
 
-    def on_manage_mpwd(self):
+    def on_manage_mpwd(self,backup):
         self.root4=Toplevel(self.root1)
         self.root4.title("Provide master password to continue.")
         self.root4.config(padx=10,pady=10)
@@ -457,11 +457,30 @@ class MyPasswords:
 
         self.show_info=Button(self.root4,width=8,text="Show",command=lambda:toggle_password(btn=self.show_info,ent=self.mpwd_inpt,state=self._show_state))
         self.show_info.grid(row=0,column=2)
+        
+        if backup:
+            self.enter_btn=Button(self.root4,text="Confirm",command=self.on_backup)
+        else:
+            self.enter_btn=Button(self.root4,text="Confirm",command=self.on_verify_mpwd)
 
-        self.enter_btn=Button(self.root4,text="Confirm",command=self.on_verify_mpwd)
         self.enter_btn.grid(row=0,column=3)
 
         self.mpwd_inpt.focus()
+
+
+    def on_backup(self):
+        if not self.service.confirm_current_master(window=self.root4,master_pwd=self.mpwd_inpt.get()):
+            return
+        self.root4.destroy()
+        backup_email=email_message_askokcancel(parent=self.root1)
+        if backup_email != None and backup_email.strip():
+            if not custom_message_askokcancel(parent=self.root1,title="Confirmation",message=f"Please confirm your email:\n{backup_email}"):
+                return
+        try:
+            self.service.backup_file(backup_email=backup_email)
+            custom_message_info(parent=self.root1,title="Success!",message="Backup created and sent successefully")
+        except Exception as e:
+            custom_message_info(parent=self.root1,title="Error!",message=f"Backup Failed:\n{e}")
         
 
     def on_verify_mpwd(self)->None:
