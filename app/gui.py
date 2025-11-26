@@ -480,7 +480,7 @@ class MyPasswords:
             self.service.backup_file(backup_email=backup_email)
             custom_message_info(parent=self.root1,title="Success!",message="Backup created and sent successefully")
         except Exception as e:
-            custom_message_info(parent=self.root1,title="Error!",message=f"Backup Failed:\n{e}")
+            custom_message_info(parent=self.root1,title="Error!",message=f"Backup Failed:\n{e}\n\nPlease check the configuration guide in docs/backup.md")
         
 
     def on_verify_mpwd(self)->None:
