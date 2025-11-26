@@ -34,7 +34,7 @@ This project serves as a demonstration of strong software architecture, GUI deve
 ### Other
 - Password generator (strong random passwords)
 - Modular and clean architecture  
-- Backup functionality (coming soon)
+- Encrypted email backup (optional, configurable via Brevo, see [Backup Setup](docs/backup.md))
 
 
 
@@ -45,7 +45,9 @@ This project serves as a demonstration of strong software architecture, GUI deve
 - **cryptography** (AES-GCM)
 - **argon2-cffi** (Argon2id KDF)
 - **zxcvbn** (password strength analysis)
+- **requests** (HTTP client for external APIs)
 - **JSON** (internal representation before encryption)
+- **Brevo API** (optional, for encrypted email backups)
 
 
 
@@ -55,10 +57,10 @@ This project serves as a demonstration of strong software architecture, GUI deve
 ├── main.py
 ├── app/
 │ ├── gui.py # Tkinter windows / UI logic
-│ ├── service.py # Business logic (AccountService)
+│ ├── service.py # Service (AccountService)
 │ ├── crypto_vault.py # Encryption / decryption (AES-GCM + Argon2id)
-│ ├── store_json.py # EncryptedStore (vault handling)
-│ └── utils.py # UI helpers (dialogs, zxcvbn, etc.)
+│ ├── encrypted_store.py # EncryptedStore (vault handling)
+│ └── email_service.py # Send email with backup file + instructions attached
 └── vault.pmdb # Encrypted vault (ignored in Git)
 ```
 
@@ -70,8 +72,8 @@ This project serves as a demonstration of strong software architecture, GUI deve
 ```bash
 git clone https://github.com/<your-username>/password-manager.git
 cd password-manager
-
 ```
+
 ### 2. Create and activate a virtual environment
 ```bash
 python3 -m venv .venv
@@ -90,6 +92,16 @@ python main.py
 ```
 
 ### **Linux users**: make sure python3-tk is installed.
+
+## Backup Feature
+
+My Password Manager includes an optional **encrypted backup** feature that allows you to:
+
+- Create a timestamped encrypted backup of your `vault.pmdb`
+- Package it into a `.zip` file together with usage instructions
+- Send the backup by email using Brevo’s transactional API
+ 
+If you want to enable the backup feature, follow the step-by-step guide in [`docs/backup.md`](docs/backup.md).
 
 
 ## Encryption Details
@@ -120,7 +132,7 @@ Without the correct master password, recovering vault data is computationally im
 <p align="center">
   <img src="assets/screenshots/login_screen.png" width="650">
 </p>
-<p align="center"><em>Login screen - After providing the correct password, the user is granted access to the main application.</em></p>
+<p align="center"><em>Login screen — after providing the correct password, the user is granted access to the main application.</em></p>
 
 <br>
 
@@ -173,9 +185,7 @@ Without the correct master password, recovering vault data is computationally im
 
  
 ## Coming Soon
-- **1. Backup system**
-- **2. Improved user experience**
-- **3. Inactivity will close session**
+- **Session will close automatically after inactivity**
 
 
 ## Disclaimer
