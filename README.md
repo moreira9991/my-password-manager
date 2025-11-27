@@ -71,7 +71,7 @@ This project serves as a demonstration of strong software architecture, GUI deve
 ### 1. Clone the repository
 ```bash
 git clone https://github.com/moreira9991/my-password-manager
-cd My_Password_Manager
+cd my-password-manager
 ```
 
 ### 2. Create and activate a virtual environment
