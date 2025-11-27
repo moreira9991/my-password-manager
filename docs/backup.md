@@ -22,7 +22,7 @@ Before using the backup feature, you need:
 1. Log in to your Brevo account.
 2. Navigate to **SMTP & API** → **API Keys**.
 3. Click **Create a new API key**.
-4. Choose a name (e.g., `password-manager-backup`).
+4. Choose a name (e.g., `my-password-manager-backup`).
 5. Copy the generated key.
 
 Your API key must start with: `xkeysib-`.
