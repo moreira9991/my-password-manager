@@ -5,7 +5,7 @@
 
 # Password Manager – Python & Tkinter  
 A lightweight, secure, and fully encrypted password manager built with Python and Tkinter.  
-All stored credentials are protected using industry-standard AES-GCM encryption with a key derived from your master password using Argon2id.
+All stored credentials are protected using AES-GCM encryption with a key derived from your master password using Argon2id.
 
 This project serves as a demonstration of strong software architecture, GUI development, and secure data handling.
 
@@ -57,10 +57,10 @@ This project serves as a demonstration of strong software architecture, GUI deve
 ├── main.py
 ├── app/
 │ ├── gui.py # Tkinter windows / UI logic
-│ ├── service.py # Service (AccountService)
+│ ├── service.py # Core account & vault service logic (CRUD, validation, backup)
 │ ├── crypto_vault.py # Encryption / decryption (AES-GCM + Argon2id)
 │ ├── encrypted_store.py # EncryptedStore (vault handling)
-│ └── email_service.py # Send email with backup file + instructions attached
+│ └── email_service.py # Backup email service
 └── vault.pmdb # Encrypted vault (ignored in Git)
 ```
 
@@ -70,8 +70,8 @@ This project serves as a demonstration of strong software architecture, GUI deve
 
 ### 1. Clone the repository
 ```bash
-git clone https://github.com/<your-username>/password-manager.git
-cd password-manager
+git clone https://github.com/moreira9991/my-password-manager
+cd My_Password_Manager
 ```
 
 ### 2. Create and activate a virtual environment
