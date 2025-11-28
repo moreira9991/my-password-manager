@@ -422,17 +422,19 @@ class MyPasswords:
 
 
     def on_edit(self):
-        self.service.edit(main_window=self.root1,
+        if self.service.edit(main_window=self.root1,
                           window=self.root3,
                           site=self.site,
                           username=self.user,
                           new_username=self.user_inpt.get(),
                           new_password=self.pwd_entry.get()
-                          )
+                          ):
+            self.password_list.render(self.service.data)
 
     # Deletes account data
     def on_delete(self,site,username): 
-        self.service.delete(main_window=self.root1,window=self.root3,site=site,username=username,pwd=self.pwd_entry.get())
+        if self.service.delete(main_window=self.root1,window=self.root3,site=site,username=username,pwd=self.pwd_entry.get()):
+            self.password_list.render(self.service.data)
 
 
     def on_manage_mpwd(self,backup):

@@ -369,7 +369,7 @@ class AccountService:
         
 
     # edits accounts, before checking and blocking for unwanted interactions
-    def edit (self,main_window:Tk,window:Tk,site:str,username:str,new_username:str,new_password:str):
+    def edit (self,main_window:Tk,window:Tk,site:str,username:str,new_username:str,new_password:str) -> bool:
         key = normalize_site(site)
         entry=self.data.get(key)
 
@@ -379,7 +379,7 @@ class AccountService:
                         title="Error!",
                         message=(f"This account already exits for {site.capitalize()}."),
                         )
-            return
+            return False
 
         for acc in entry:
             if username == acc["username"]:
@@ -388,13 +388,13 @@ class AccountService:
                     custom_message_info(parent=window, title="Error!", message=(
                         "No changes detected."
                     ))
-                    return
+                    return False
                 
                 if (not new_username.strip()) or (not new_password.strip()):
                     custom_message_info(parent=window, title="Error!", message=(
                         "Don't leave any fields empty"
                     ))
-                    return
+                    return False
                 
                 #confirm change
                 if edit_password_msg(parent=window,site=site,pwd=new_password):
@@ -404,7 +404,7 @@ class AccountService:
                             title="Error",
                             message="Internal error: master password not set.",
                         )
-                        return
+                        return False
 
 
                     acc["username"]= new_username
@@ -413,13 +413,12 @@ class AccountService:
 
                     custom_message_info(parent=window,title="Success!", message=f"{site.capitalize()} account saved.")
                     window.destroy()
-                    main_window.destroy()
-                    break
+                    return True
                 else:
-                    return
+                    return False
 
 
-    def delete (self,main_window:Tk,window:Tk,site:str,username:str,pwd:str):
+    def delete (self,main_window:Tk,window:Tk,site:str,username:str,pwd:str) -> bool:
         if custom_message_askokcancel(
             parent=window,
             title=f"Deleting data for {site.capitalize()}",
@@ -436,9 +435,9 @@ class AccountService:
             
             custom_message_info(parent=window,title="Success!",message=f"{site.capitalize()} account deleted.")
             window.destroy()
-            main_window.destroy()
+            return True
         else:
-            return
+            return False
         
 
     def master_pwd_set (self,main_window:Tk,window:Tk,master_pwd:str,confirm_m_pwd):
