@@ -5,7 +5,7 @@ from pathlib import Path
 from app.service import AccountService
 from app.encrypted_store import EncryptedStore
 
-def run_app() -> None:
+def start_app() -> None:
     store = EncryptedStore(path=Path("vault.pmdb"))
     service = AccountService(store)
     
@@ -15,9 +15,9 @@ def run_app() -> None:
     master_root.mainloop()
     if master_gui.result:
         app_root = Tk()
-        AppGUI(app_root,service)
+        AppGUI(app_root,service, restart_callback=start_app)
         app_root.mainloop()
 
 
 if __name__ == "__main__":
-    run_app()
+    start_app()
