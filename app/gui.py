@@ -1,9 +1,15 @@
 from tkinter import Tk, Canvas, PhotoImage, Label, Entry, Button, END,Toplevel, Frame, StringVar, Scrollbar
 from pathlib import Path
+import time
 from app.service import generate_password, normalize_site, custom_message_info, toggle_password, AccountService, custom_message_askokcancel, email_message_askokcancel
 
 class AppGUI:
-    def __init__(self, root: Tk, service:AccountService)-> None:
+    def __init__(self, root: Tk, service:AccountService, restart_callback)-> None:
+
+        self.restart_callback = restart_callback
+        self.last_activity = time.time()
+        self.incativity_job= None
+
         self.root = root
         self.service=service
 
@@ -21,6 +27,9 @@ class AppGUI:
         self.root.bind("<KP_Enter>", lambda e:self.add_btn.invoke())
 
         self.root.bind("<Escape>",lambda e:self.close_window())
+
+        for event in ("<Motion>","<Key>","<Button>"):
+            self.root.bind(event, lambda e: self.reset_timer())
 
         self.canvas = Canvas (width=1000, height=340,highlightthickness=0)
         logo_path = Path("assets/logo.png")
@@ -71,6 +80,8 @@ class AppGUI:
         #Focus will start on the website entry box
         self.web_inpt.focus()
 
+        self.check_inactivity()
+
     def close_window(self):
         if custom_message_askokcancel(parent=self.root,title="Closing app...",message="Press 'OK' to quit."):
             self.root.destroy()
@@ -95,7 +106,23 @@ class AppGUI:
 
  
     def on_cls(self)-> None:
-        MyPasswords(self.root,self.service)
+        MyPasswords(self,self.service)
+
+    def reset_timer(self):
+        self.last_activity = time.time()
+
+    def check_inactivity(self):
+        if time.time() - self.last_activity > 60:
+            self.logout()
+            return
+        self.incativity_job=self.root.after(1000,self.check_inactivity)
+
+    def logout(self):
+        try:
+            self.root.destroy()
+        except:
+            pass
+        self.restart_callback()
 
 
 class PasswordListView:
@@ -224,9 +251,14 @@ class PasswordListView:
                 cnt += 1
 
 class MyPasswords:
-    def __init__(self, root1:Tk, service :AccountService):
-        self.root1=Toplevel(root1) 
-        self.root1.transient(root1)
+    def __init__(self, appgui, service :AccountService):
+        self.appgui=appgui
+        self.root1=Toplevel(appgui.root)
+
+        for event in ("<Motion>","<Key>","<Button>"):
+            self.root1.bind(event, lambda e: self.appgui.reset_timer())
+
+        self.root1.transient(appgui.root)
         self.root1.grab_set() 
         self.root1.title("My Passwords")
         self.root1.config(padx=10,pady=10)
@@ -289,6 +321,8 @@ class MyPasswords:
 
         if entry:
             root2=Toplevel(self.root1)
+            for event in ("<Motion>","<Key>","<Button>"):
+                root2.bind(event, lambda e: self.appgui.reset_timer())
             root2.title(site.capitalize())
             Label(root2, text="Email/Username", font=("Arial",10,"bold")).grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
             Label(root2, text="Password", font=("Arial",10,"bold")).grid(column=1, row= 0 ,sticky="w",padx=10,pady=5)
@@ -352,6 +386,8 @@ class MyPasswords:
 
     def on_manage(self):
         self.root3=Toplevel(self.root1)
+        for event in ("<Motion>","<Key>","<Button>"):
+            self.root3.bind(event, lambda e: self.appgui.reset_timer())
         self.root3.title("Manage Passwords")
         self.root3.config(padx=10,pady=10)
         self.root3.resizable(False,False)
@@ -439,6 +475,8 @@ class MyPasswords:
 
     def on_manage_mpwd(self,backup):
         self.root4=Toplevel(self.root1)
+        for event in ("<Motion>","<Key>","<Button>"):
+            self.root4.bind(event, lambda e: self.appgui.reset_timer())
         self.root4.title("Provide master password to continue.")
         self.root4.config(padx=10,pady=10)
         self.root4.resizable(False,False)
@@ -492,6 +530,10 @@ class MyPasswords:
 
             #open window to set a new master password
             self.root5=Toplevel(self.root1)
+
+            for event in ("<Motion>","<Key>","<Button>"):
+                self.root5.bind(event, lambda e: self.appgui.reset_timer())
+
             self.root5.title("Set new master password.")
             self.root5.config(padx=10,pady=10)
             self.root5.transient(self.root1) 
