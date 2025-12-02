@@ -27,7 +27,7 @@ def derive_key_from_master(master_password: str, salt: bytes, params: KdfParams)
         hash_len=params.hash_len,
         type=Type.ID,
     )
-# Encrypt a Python dict into an envolope ready to be saved to disk
+# Encrypt a dict into an envolope ready to be saved to disk
 def encrypt_vault(master_password: str, plain_data: Dict[str, Any]) -> Dict[str, Any]:
 
     kdf_params = KdfParams()
@@ -58,6 +58,28 @@ def encrypt_vault(master_password: str, plain_data: Dict[str, Any]) -> Dict[str,
     }
 
     return envelope
+
+
+
+def encrypt_vault_with_key(key: bytes, plain_data: Dict[str, Any], kdf_info: Dict[str, Any]) -> Dict[str, Any]:
+    aesgcm = AESGCM(key)
+    nonce = os.urandom(12)
+
+    plaintext = json.dumps(plain_data, ensure_ascii=False).encode("utf-8")
+    ciphertext = aesgcm.encrypt(nonce, plaintext, associated_data=None)
+
+    envelope = {
+        "version": 1,
+        "kdf": kdf_info,  # reutilizamos exatamente os mesmos parâmetros KDF (incluindo o salt)
+        "cipher": {
+            "name": "AES-GCM",
+            "nonce": base64.b64encode(nonce).decode("utf-8"),
+        },
+        "data": base64.b64encode(ciphertext).decode("utf-8"),
+    }
+
+    return envelope
+
 
 
 # Decrypt an envelope (loaded from disck) into the original Python dict.

@@ -84,6 +84,7 @@ class AppGUI:
 
     def close_window(self):
         if custom_message_askokcancel(parent=self.root,title="Closing app...",message="Press 'OK' to quit."):
+            self.logout()
             self.root.destroy()
     
 
@@ -108,8 +109,10 @@ class AppGUI:
     def on_cls(self)-> None:
         MyPasswords(self,self.service)
 
+
     def reset_timer(self):
         self.last_activity = time.time()
+
 
     def check_inactivity(self):
         if time.time() - self.last_activity > 60:
@@ -117,7 +120,10 @@ class AppGUI:
             return
         self.incativity_job=self.root.after(1000,self.check_inactivity)
 
+
     def logout(self):
+        self.service.clear_sensitive_data()
+
         try:
             self.root.destroy()
         except:
@@ -458,7 +464,7 @@ class MyPasswords:
 
 
     def on_edit(self):
-        if self.service.edit(main_window=self.root1,
+        if self.service.edit(
                           window=self.root3,
                           site=self.site,
                           username=self.user,
@@ -469,7 +475,11 @@ class MyPasswords:
 
     # Deletes account data
     def on_delete(self,site,username): 
-        if self.service.delete(main_window=self.root1,window=self.root3,site=site,username=username,pwd=self.pwd_entry.get()):
+        if self.service.delete(
+            window=self.root3,
+            site=site,
+            username=username,
+            pwd=self.pwd_entry.get()):
             self.password_list.render(self.service.data)
 
 
