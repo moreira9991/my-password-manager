@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 from typing import Any
-from app.crypto_vault import encrypt_vault, decrypt_vault
+from app.crypto_vault import encrypt_vault, decrypt_vault, encrypt_vault_with_key
 from datetime import datetime
 import shutil
 # Raised when decryption fails due to wrong password or corrupted file
@@ -15,6 +15,10 @@ class EncryptedStore:
     def __init__(self, path: Path | str = "vault.pmdb") -> None:
         self.path = Path(path)
         self.backup_path = Path("backup/")
+
+
+        self.kdf_info: dict[str, Any] | None = None
+
 
     def _load_envelope(self) -> dict[str, Any]:
         if not self.path.exists():
@@ -36,16 +40,20 @@ class EncryptedStore:
     # If file does not exists creates empty vault with new master password
     # If exists, try to decrypt with master password provided
     def load(self, master_password: str) -> dict[str, Any]:
-  
-        # First run: no vault yet
         if not self.path.exists():
             data: dict[str, Any] = {}
             envelope = encrypt_vault(master_password, data)
+            self.kdf_info = envelope["kdf"]
             self._save_envelope(envelope)
             return data
 
+
         # Vault exists: read + decrypt
         envelope = self._load_envelope()
+
+        self.kdf_info = envelope.get["kdf"]
+
+
         try:
             data = decrypt_vault(master_password, envelope)
             if not isinstance(data, dict):
@@ -61,7 +69,15 @@ class EncryptedStore:
     def save(self, master_password: str, data: dict[str, Any]) -> None:
 
         envelope = encrypt_vault(master_password, data)
+        self.kdf_info = envelope.get["kdf"]
         self._save_envelope(envelope)
+
+
+    def get_kdf_info(self) -> dict[str, Any]:
+        if self.kdf_info is None:
+            raise RuntimeError("KDF info not loaded. Call load() or save() first.")
+        return self.kdf_info
+
 
     # Creates a backup vault with time stamp of its creation.
     def create_backup_vault(self) -> Path:
@@ -72,3 +88,9 @@ class EncryptedStore:
 
         shutil.copy2(self.path,backup_file)
         return backup_file
+    
+    def save_with_key(self, key: bytes, data: dict[str, Any]) -> None:
+        if self.kdf_info is None:
+            raise RuntimeError("KDF info not loaded. Cannot save with key.")
+        envelope = encrypt_vault_with_key(key, data, self.kdf_info)
+        self._save_envelope(envelope)

@@ -7,6 +7,9 @@ from app.email_service import send_backup_email
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
 from datetime import datetime
+import base64
+from app.crypto_vault import derive_key_from_master, KdfParams
+
 
 
 # Create a ZIP file containing the encypted backup and the instructions file.
@@ -219,10 +222,25 @@ def toggle_password(btn:Button,ent:Entry,state:dict):
 
 class AccountService:
     def __init__(self, store: EncryptedStore) -> None:
-        self.store= store
-        self.master_password:str  | None = None
-        self.data : dict[str,Any]={}
+        self.store = store
+        self.session_key: bytes | None = None
+        self.data: dict[str, Any] = {}
+
+
+
+    def _derive_session_key(self, master_pwd: str) -> bytes:
+        kdf_info = self.store.get_kdf_info()
+        salt = base64.b64decode(kdf_info["salt"])
+        params = KdfParams(
+            time_cost=kdf_info["time"],
+            memory_cost=kdf_info["memory"],
+            parallelism=kdf_info["parallelism"],
+            hash_len=kdf_info["length"],
+        )
+        return derive_key_from_master(master_pwd, salt, params)
         
+
+
     # Returns True if the vault file does not exists yet.
     def is_first_run(self)-> bool:
         return not self.store.path.exists()
@@ -248,9 +266,9 @@ class AccountService:
             return False
 
         try:
-            # create empty vault if file does not exists
             self.data = self.store.load(master_pwd)
-            self.master_password = master_pwd
+            self.session_key = self._derive_session_key(master_pwd) 
+
         except Exception as e:
             custom_message_info(
                 parent=window,
@@ -275,7 +293,7 @@ class AccountService:
 
         try:
             self.data = self.store.load(master_pwd)
-            self.master_password = master_pwd
+            self.session_key = self._derive_session_key(master_pwd)
         except VaultDecryptionError:
             custom_message_info(
                 parent=window,
@@ -307,16 +325,43 @@ class AccountService:
                 message="Please provide the master password.",
             )
             return False
+        
+        # Saving state before testing
+        old_data = self.data
+        old_kdf = self.store.kdf_info
 
-        if master_pwd != self.master_password:
+        try:
+            # try to decrypt
+            _= self.store.load(master_pwd)
+
+            #restore original state
+            self.data= old_data
+            self.store.kdf_info = old_kdf
+
+            return True
+        
+        except VaultDecryptionError:
+            #restore original state even if password is wrong
+            self.data= old_data
+            self.store.kdf_info = old_kdf
+
             custom_message_info(
                 parent=window,
                 title="Error!",
                 message="Provide the correct password to continue.",
             )
             return False
+        except Exception as e:
+            #restore original state even on unexpected errors
+            self.data= old_data
+            self.store.kdf_info = old_kdf
 
-        return True
+            custom_message_info(
+                parent=window,
+                title="Error!",
+                message=f"Unexpected error while verifying master password:\n{e}",
+            )
+            return False
 
 
     def find(self,site:str,username:str):
@@ -359,7 +404,7 @@ class AccountService:
         self.data[key].append({"username":username,"password":password})
 
         try:
-            self.store.save(self.master_password,self.data)
+            self.store.save_with_key(self.session_key, self.data)
             custom_message_info(parent=window,title="Success!",message=f"{site.capitalize()} account saved.")
         except Exception as e:
             custom_message_info(parent=window,title="Error",message= f"Failed to save data: {e}")
@@ -369,7 +414,7 @@ class AccountService:
         
 
     # edits accounts, before checking and blocking for unwanted interactions
-    def edit (self,main_window:Tk,window:Tk,site:str,username:str,new_username:str,new_password:str) -> bool:
+    def edit (self,window:Tk,site:str,username:str,new_username:str,new_password:str) -> bool:
         key = normalize_site(site)
         entry=self.data.get(key)
 
@@ -398,18 +443,9 @@ class AccountService:
                 
                 #confirm change
                 if edit_password_msg(parent=window,site=site,pwd=new_password):
-                    if self.master_password is None:
-                        custom_message_info(
-                            parent=window,
-                            title="Error",
-                            message="Internal error: master password not set.",
-                        )
-                        return False
-
-
                     acc["username"]= new_username
                     acc["password"]= new_password
-                    self.store.save(self.master_password,self.data)
+                    self.store.save_with_key(self.session_key, self.data)
 
                     custom_message_info(parent=window,title="Success!", message=f"{site.capitalize()} account saved.")
                     window.destroy()
@@ -418,7 +454,7 @@ class AccountService:
                     return False
 
 
-    def delete (self,main_window:Tk,window:Tk,site:str,username:str,pwd:str) -> bool:
+    def delete (self,window:Tk,site:str,username:str,pwd:str) -> bool:
         if custom_message_askokcancel(
             parent=window,
             title=f"Deleting data for {site.capitalize()}",
@@ -431,7 +467,7 @@ class AccountService:
                     arr.pop(i)
                     if not arr: 
                         self.data.pop(key,None)
-                    self.store.save(self.master_password,self.data)
+                    self.store.save_with_key(self.session_key, self.data)
             
             custom_message_info(parent=window,title="Success!",message=f"{site.capitalize()} account deleted.")
             window.destroy()
@@ -449,16 +485,11 @@ class AccountService:
             custom_message_info(parent=window,title="Error!",message="The passwords don't match. Please verify and try again.")
             return
 
-        if master_pwd == self.master_password:
-            custom_message_info(parent=window,title="Error!",message="No changes detected.")
-            return
-
-        
         if not master_password_msg(parent=window,pwd=master_pwd):
             return False
         
         self.store.save(master_password=master_pwd,data=self.data)
-        self.master_password = master_pwd
+        self.session_key = self._derive_session_key(master_pwd)
         
         custom_message_info(parent=window, title="Success!", message="Master password set!")
         return True
@@ -494,3 +525,11 @@ class AccountService:
                     item.unlink()
                 except Exception as e:
                     print(f"Failed to delete {item}: {e}")
+
+
+    def clear_sensitive_data(self) -> None:
+        # Clear decrypted data from memory
+        self.data.clear()
+
+        # Clear master password from memory
+        self.session_key = None
