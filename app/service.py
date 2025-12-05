@@ -11,7 +11,6 @@ import base64
 from app.crypto_vault import derive_key_from_master, KdfParams
 
 
-
 # Create a ZIP file containing the encypted backup and the instructions file.
 def create_backup_zip(backup_file: Path, instructions_file: Path, backup_dir: Path) -> Path:
     backup_dir.mkdir(parents=True, exist_ok=True)
@@ -85,7 +84,6 @@ def custom_message_askokcancel(parent:Tk, title, message)-> bool:
     win.attributes("-topmost",True)
     win.transient(parent)
 
-
     parent.update_idletasks()
     x = parent.winfo_rootx()+(parent.winfo_width()//2-150)
     y = parent.winfo_rooty()+(parent.winfo_height()//2-150)
@@ -97,10 +95,12 @@ def custom_message_askokcancel(parent:Tk, title, message)-> bool:
     btn_frame = Frame(win)
     btn_frame.pack(pady=10)
 
+
     def on_ok():
         nonlocal result_message
         result_message= True
         win.destroy()
+
 
     def on_cancel():
         nonlocal result_message
@@ -146,10 +146,16 @@ def email_message_askokcancel(parent:Tk)-> str|None:
     e_mail = Entry(win,width=20)
     e_mail.grid(column=0,row=1,columnspan=2,sticky="WE",pady=10)
 
+
     def on_ok():
         nonlocal result_email
         result_email= e_mail.get()
+        if not result_email.strip():
+            custom_message_info(parent=win,title="Error!",message="Please provide an email to send backup vault.")
+            result_email = None
+            return
         win.destroy()
+
 
     def on_cancel():
         win.destroy()
@@ -162,6 +168,7 @@ def email_message_askokcancel(parent:Tk)-> str|None:
 
     win.bind("<Return>", lambda e:ok_btn.invoke())
     win.bind("<KP_Enter>", lambda e:ok_btn.invoke())
+
 
     win.deiconify()
     win.grab_set()
@@ -226,8 +233,6 @@ class AccountService:
         self.session_key: bytes | None = None
         self.data: dict[str, Any] = {}
 
-
-
     def _derive_session_key(self, master_pwd: str) -> bytes:
         kdf_info = self.store.get_kdf_info()
         salt = base64.b64decode(kdf_info["salt"])
@@ -240,11 +245,11 @@ class AccountService:
         return derive_key_from_master(master_pwd, salt, params)
         
 
-
     # Returns True if the vault file does not exists yet.
     def is_first_run(self)-> bool:
         return not self.store.path.exists()
     
+
     def initialize_vault(self,window:Tk, master_pwd:str,confirm_pwd:str ) -> bool:
         if not master_pwd.strip() or not confirm_pwd.strip():
             custom_message_info(
@@ -280,9 +285,9 @@ class AccountService:
         custom_message_info(parent=window, title="Success!", message="Master password set!")
         return True
     
+
     # verifies master password and load data into memory.
     def verify_master(self, window: Tk, master_pwd: str) -> bool:
-
         if not master_pwd.strip():
             custom_message_info(
                 parent=window,
@@ -290,10 +295,11 @@ class AccountService:
                 message="Please provide the master password.",
             )
             return False
-
+        
         try:
             self.data = self.store.load(master_pwd)
             self.session_key = self._derive_session_key(master_pwd)
+
         except VaultDecryptionError:
             custom_message_info(
                 parent=window,
@@ -301,7 +307,6 @@ class AccountService:
                 message="Incorrect master password or corrupted vault file.",
             )
             return False
-
 
         except Exception as e:
             custom_message_info(
@@ -504,7 +509,6 @@ class AccountService:
             instructions_file=instructions_file,
             backup_dir=self.store.backup_path
         )
-
         send_backup_email(
             to_email=backup_email,
             attachments=[zip_path],

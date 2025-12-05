@@ -523,14 +523,19 @@ class MyPasswords:
             return
         self.root4.destroy()
         backup_email=email_message_askokcancel(parent=self.root1)
-        if backup_email != None and backup_email.strip():
-            if not custom_message_askokcancel(parent=self.root1,title="Confirmation",message=f"Please confirm your email:\n{backup_email}"):
-                return
+        if backup_email == None:
+            custom_message_info(parent=self.root1,title="Info",message="Operation Cancelled!")
+            return
+        if not custom_message_askokcancel(parent=self.root1,title="Confirmation",message=f"Please confirm your email:\n{backup_email}"):
+            custom_message_info(parent=self.root1,title="Info",message="Operation Cancelled!")
+            return
         try:
             self.service.backup_file(backup_email=backup_email)
             custom_message_info(parent=self.root1,title="Success!",message="Backup created and sent successefully")
         except Exception as e:
             custom_message_info(parent=self.root1,title="Error!",message=f"Backup Failed:\n{e}\n\nPlease check the configuration guide in docs/backup.md")
+            self.service.clean_backup_dir(self.service.store.backup_path)
+
         
 
     def on_verify_mpwd(self)->None:

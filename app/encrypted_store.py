@@ -51,7 +51,7 @@ class EncryptedStore:
         # Vault exists: read + decrypt
         envelope = self._load_envelope()
 
-        self.kdf_info = envelope.get["kdf"]
+        self.kdf_info = envelope["kdf"]
 
 
         try:
@@ -69,7 +69,7 @@ class EncryptedStore:
     def save(self, master_password: str, data: dict[str, Any]) -> None:
 
         envelope = encrypt_vault(master_password, data)
-        self.kdf_info = envelope.get["kdf"]
+        self.kdf_info = envelope["kdf"]
         self._save_envelope(envelope)
 
 
