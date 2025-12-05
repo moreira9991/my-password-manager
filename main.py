@@ -18,6 +18,5 @@ def start_app() -> None:
         AppGUI(app_root,service, restart_callback=start_app)
         app_root.mainloop()
 
-
 if __name__ == "__main__":
     start_app()
