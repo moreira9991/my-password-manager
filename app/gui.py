@@ -3,6 +3,7 @@ from pathlib import Path
 import time
 from app.service import generate_password, normalize_site, custom_message_info, toggle_password, AccountService, custom_message_askokcancel, email_message_askokcancel
 
+
 class AppGUI:
     def __init__(self, root: Tk, service:AccountService, restart_callback)-> None:
 
@@ -82,9 +83,10 @@ class AppGUI:
 
         self.check_inactivity()
 
+        
     def close_window(self):
         if custom_message_askokcancel(parent=self.root,title="Closing app...",message="Press 'OK' to quit."):
-            self.logout()
+            self.service.clear_sensitive_data()
             self.root.destroy()
     
 
@@ -108,6 +110,8 @@ class AppGUI:
  
     def on_cls(self)-> None:
         MyPasswords(self,self.service)
+        self.search_btn.after_idle(lambda: self.search_btn.configure(relief="raised"))
+        self.search_btn.after_idle(lambda: self.search_btn.configure(state="normal"))
 
 
     def reset_timer(self):
@@ -265,7 +269,10 @@ class MyPasswords:
             self.root1.bind(event, lambda e: self.appgui.reset_timer())
 
         self.root1.transient(appgui.root)
-        self.root1.grab_set() 
+
+        self.root1.update_idletasks()
+        self.root1.after_idle(self.root1.grab_set)
+
         self.root1.title("My Passwords")
         self.root1.config(padx=10,pady=10)
         self.root1.geometry("1580x1000")
@@ -318,6 +325,9 @@ class MyPasswords:
 
     
     def onsearch(self) -> None:
+        self.search_btn.after_idle(lambda: self.search_btn.configure(relief="raised"))
+        self.search_btn.after_idle(lambda: self.search_btn.configure(state="normal"))
+
         site = self.wbsite.get()
         if not site.strip():
             custom_message_info(parent=self.root1,title="Error!", message="Please type a website to search.")
@@ -327,15 +337,20 @@ class MyPasswords:
 
         if entry:
             root2=Toplevel(self.root1)
+            root2.resizable(False,False)
             for event in ("<Motion>","<Key>","<Button>"):
                 root2.bind(event, lambda e: self.appgui.reset_timer())
             root2.title(site.capitalize())
             Label(root2, text="Email/Username", font=("Arial",10,"bold")).grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
             Label(root2, text="Password", font=("Arial",10,"bold")).grid(column=1, row= 0 ,sticky="w",padx=10,pady=5)
+
             root2.bind("<Escape>",lambda e:root2.destroy())
 
-            root2.transient(self.root1) 
-            root2.grab_set()
+            root2.transient(self.root1)
+            
+            root2.update_idletasks()
+            root2.after_idle(root2.grab_set)
+
             state={"visible":False}
 
             cnt=1
@@ -401,6 +416,7 @@ class MyPasswords:
         self.root3.bind("<Return>", lambda e:self.manage_search_btn.invoke())
         self.root3.bind("<KP_Enter>", lambda e:self.manage_search_btn.invoke())
 
+        self.root1.unbind("<Escape>")
         self.root3.bind("<Escape>",lambda e:self.root3.destroy())
 
 
@@ -409,7 +425,7 @@ class MyPasswords:
         # possible to coppy info from the accounts
         self.disable_btns(on_off=True)
 
-        self.root3.transient(self.root1) 
+        self.root3.transient(self.root1)
 
         Label(self.root3, text="Site", font=("Arial",10,"bold")).grid(column=0, row= 0 ,sticky="w",padx=10,pady=5)
         Label(self.root3, text="Email/Username", font=("Arial",10,"bold")).grid(column=0, row= 1 ,sticky="w",padx=10,pady=5)
@@ -423,7 +439,15 @@ class MyPasswords:
         self.manage_search_btn=Button(self.root3,text="Search",command=self.on_manage_search)
         self.manage_search_btn.grid(column=2, row=0,sticky="WE")
 
-        self.root3.bind("<Destroy>", lambda e:self.disable_btns(on_off=False))
+
+        def root3_destroy():
+            try:
+                self.disable_btns(on_off=False)
+                self.root1.bind("<Escape>",lambda e:self.root1.destroy())
+            except:
+                pass
+
+        self.root3.bind("<Destroy>", lambda e:root3_destroy())
 
         self.site_inpt.focus()
 
@@ -484,14 +508,21 @@ class MyPasswords:
 
 
     def on_manage_mpwd(self,backup):
+        self.manage_master_btn.after_idle(lambda: self.manage_master_btn.configure(relief="raised"))
+        self.manage_master_btn.after_idle(lambda: self.manage_master_btn.configure(state="normal"))
+
         self.root4=Toplevel(self.root1)
+
         for event in ("<Motion>","<Key>","<Button>"):
             self.root4.bind(event, lambda e: self.appgui.reset_timer())
+
         self.root4.title("Provide master password to continue.")
         self.root4.config(padx=10,pady=10)
         self.root4.resizable(False,False)
+
         self.root4.transient(self.root1) 
-        self.root4.grab_set() 
+        self.root4.update_idletasks()
+        self.root4.after_idle(self.root4.grab_set)
 
         self.root4.bind("<Return>", lambda e:self.enter_btn.invoke())
         self.root4.bind("<KP_Enter>", lambda e:self.enter_btn.invoke())
@@ -519,6 +550,7 @@ class MyPasswords:
 
 
     def on_backup(self):
+
         if not self.service.confirm_current_master(window=self.root4,master_pwd=self.mpwd_inpt.get()):
             return
         self.root4.destroy()
@@ -536,7 +568,6 @@ class MyPasswords:
             custom_message_info(parent=self.root1,title="Error!",message=f"Backup Failed:\n{e}\n\nPlease check the configuration guide in docs/backup.md")
             self.service.clean_backup_dir(self.service.store.backup_path)
 
-        
 
     def on_verify_mpwd(self)->None:
         if self.service.confirm_current_master(window=self.root4,master_pwd=self.mpwd_inpt.get()):
@@ -631,6 +662,7 @@ class MasterGUI:
 
         self.root.bind("<Return>", lambda e:self.add_btn.invoke())
         self.root.bind("<KP_Enter>", lambda e:self.add_btn.invoke())
+        self.root.bind("<Escape>", lambda e:self.close_window())
 
         if self.service.is_first_run():
             self.pass_text = Label(text="Set a master password:")
@@ -686,6 +718,12 @@ class MasterGUI:
             self.add_btn = Button(self.root,text="Confirm", width=10, command=self.on_verify)
             self.add_btn.grid(row=0,column=3)
             self.pass_inpt.focus()
+
+    def close_window(self):
+        if custom_message_askokcancel(parent=self.root,title="Closing app...",message="Press 'OK' to quit."):
+            self.service.clear_sensitive_data()
+            self.root.destroy()
+    
 
     def on_set(self)->None:
         #Initialize vault. If successful ,closes window and continue
